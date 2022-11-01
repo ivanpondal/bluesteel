@@ -7,13 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FA4DC006290C406200B2B1BC /* DeviceAdvDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA4DC005290C406200B2B1BC /* DeviceAdvDataView.swift */; };
 		FAD2994328F4D89800F53608 /* BLEScannerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD2994228F4D89800F53608 /* BLEScannerApp.swift */; };
-		FAD2994528F4D89800F53608 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD2994428F4D89800F53608 /* ContentView.swift */; };
+		FAD2994528F4D89800F53608 /* DeviceListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD2994428F4D89800F53608 /* DeviceListView.swift */; };
 		FAD2994728F4D89900F53608 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FAD2994628F4D89900F53608 /* Assets.xcassets */; };
 		FAD2994A28F4D89900F53608 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FAD2994928F4D89900F53608 /* Preview Assets.xcassets */; };
 		FAD2995428F4D89A00F53608 /* BLEScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD2995328F4D89A00F53608 /* BLEScannerTests.swift */; };
 		FAD2995E28F4D89A00F53608 /* BLEScannerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD2995D28F4D89A00F53608 /* BLEScannerUITests.swift */; };
 		FAD2996028F4D89A00F53608 /* BLEScannerUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD2995F28F4D89A00F53608 /* BLEScannerUITestsLaunchTests.swift */; };
+		FAD2996E28F4DADD00F53608 /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD2996D28F4DADD00F53608 /* Device.swift */; };
+		FAE3F2F729003A0300C4C036 /* BluetoothRadio.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE3F2F629003A0300C4C036 /* BluetoothRadio.swift */; };
+		FAFA278B2906F12400CE0AE8 /* DeviceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAFA278A2906F12400CE0AE8 /* DeviceView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,9 +38,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		FA4DC005290C406200B2B1BC /* DeviceAdvDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAdvDataView.swift; sourceTree = "<group>"; };
 		FAD2993F28F4D89800F53608 /* BLEScanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BLEScanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FAD2994228F4D89800F53608 /* BLEScannerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEScannerApp.swift; sourceTree = "<group>"; };
-		FAD2994428F4D89800F53608 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		FAD2994428F4D89800F53608 /* DeviceListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceListView.swift; sourceTree = "<group>"; };
 		FAD2994628F4D89900F53608 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		FAD2994928F4D89900F53608 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		FAD2994F28F4D89A00F53608 /* BLEScannerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BLEScannerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -44,6 +49,9 @@
 		FAD2995928F4D89A00F53608 /* BLEScannerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BLEScannerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FAD2995D28F4D89A00F53608 /* BLEScannerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEScannerUITests.swift; sourceTree = "<group>"; };
 		FAD2995F28F4D89A00F53608 /* BLEScannerUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEScannerUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		FAD2996D28F4DADD00F53608 /* Device.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Device.swift; sourceTree = "<group>"; };
+		FAE3F2F629003A0300C4C036 /* BluetoothRadio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothRadio.swift; sourceTree = "<group>"; };
+		FAFA278A2906F12400CE0AE8 /* DeviceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,8 +102,10 @@
 		FAD2994128F4D89800F53608 /* BLEScanner */ = {
 			isa = PBXGroup;
 			children = (
+				FAFA27892906F0FF00CE0AE8 /* Scanner */,
+				FAE3F2F5290039EF00C4C036 /* Services */,
+				FAD2996C28F4DACE00F53608 /* Models */,
 				FAD2994228F4D89800F53608 /* BLEScannerApp.swift */,
-				FAD2994428F4D89800F53608 /* ContentView.swift */,
 				FAD2994628F4D89900F53608 /* Assets.xcassets */,
 				FAD2994828F4D89900F53608 /* Preview Content */,
 			);
@@ -125,6 +135,32 @@
 				FAD2995F28F4D89A00F53608 /* BLEScannerUITestsLaunchTests.swift */,
 			);
 			path = BLEScannerUITests;
+			sourceTree = "<group>";
+		};
+		FAD2996C28F4DACE00F53608 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				FAD2996D28F4DADD00F53608 /* Device.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		FAE3F2F5290039EF00C4C036 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				FAE3F2F629003A0300C4C036 /* BluetoothRadio.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		FAFA27892906F0FF00CE0AE8 /* Scanner */ = {
+			isa = PBXGroup;
+			children = (
+				FAD2994428F4D89800F53608 /* DeviceListView.swift */,
+				FAFA278A2906F12400CE0AE8 /* DeviceView.swift */,
+				FA4DC005290C406200B2B1BC /* DeviceAdvDataView.swift */,
+			);
+			path = Scanner;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -257,8 +293,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FAD2994528F4D89800F53608 /* ContentView.swift in Sources */,
+				FA4DC006290C406200B2B1BC /* DeviceAdvDataView.swift in Sources */,
+				FAD2996E28F4DADD00F53608 /* Device.swift in Sources */,
+				FAE3F2F729003A0300C4C036 /* BluetoothRadio.swift in Sources */,
+				FAD2994528F4D89800F53608 /* DeviceListView.swift in Sources */,
 				FAD2994328F4D89800F53608 /* BLEScannerApp.swift in Sources */,
+				FAFA278B2906F12400CE0AE8 /* DeviceView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -420,6 +460,7 @@
 				DEVELOPMENT_TEAM = T46D5PYZ4X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "We use bluetooth to communicate with other devices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -449,6 +490,7 @@
 				DEVELOPMENT_TEAM = T46D5PYZ4X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "We use bluetooth to communicate with other devices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
