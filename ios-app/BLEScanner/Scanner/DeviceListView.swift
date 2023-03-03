@@ -55,8 +55,8 @@ struct DeviceListView: View {
             .throttle(for: .seconds(1), scheduler: RunLoop.main, latest: true)
             .map({ peripheralWithSignal -> Device in
                 var advertisedServices: [UUID] = []
-                
                 let uuidAdvertisements = peripheralWithSignal.advertisements[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] ?? []
+                let uuidHashedAdvertisements = peripheralWithSignal.advertisements[CBAdvertisementDataOverflowServiceUUIDsKey] as? [CBUUID] ?? []
                 
                 for uuidAdvertisement in uuidAdvertisements {
                     if let uuid = UUID(uuidString: uuidAdvertisement.uuidString) {

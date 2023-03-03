@@ -8,6 +8,7 @@
 import Foundation
 import CoreBluetooth
 import Combine
+import UIKit
 
 struct PeripheralAdvertisement {
     let peripheral: CBPeripheral
@@ -58,7 +59,7 @@ extension BluetoothRadio: CBCentralManagerDelegate {
             print("resetting")
         case .poweredOn:
             print("poweredOn")
-            centralManager?.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
+            centralManager?.scanForPeripherals(withServices: [BluetoothRadio.serviceUUID], options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
         default:
             print("other")
         }
@@ -115,7 +116,7 @@ extension BluetoothRadio: CBPeripheralDelegate {
             print("something went wrong adding peripheral service: ", errorDescription)
         } else {
             print("peripheral service is up")
-            peripheral.startAdvertising([CBAdvertisementDataServiceUUIDsKey: [BluetoothRadio.serviceUUID]])
+            peripheral.startAdvertising([CBAdvertisementDataLocalNameKey: UIDevice.current.name, CBAdvertisementDataServiceUUIDsKey: [BluetoothRadio.serviceUUID]])
         }
     }
     
