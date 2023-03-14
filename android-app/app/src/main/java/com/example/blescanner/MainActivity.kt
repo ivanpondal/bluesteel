@@ -33,9 +33,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.blescanner.model.BluetoothDevice
 import com.example.blescanner.model.BluetoothDeviceData
 import com.example.blescanner.ui.theme.BLEScannerTheme
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.last
-import kotlinx.coroutines.launch
 
 const val REQUEST_ENABLE_BT: Int = 1
 const val TAG = "MainActivity"
@@ -86,7 +83,6 @@ class MainActivity : ComponentActivity() {
                         composable("device/{deviceId}") { backStackEntry ->
                             val deviceId =
                                 backStackEntry.arguments?.getString("deviceId") ?: "no id :("
-                            Log.d(TAG, deviceId)
                             val device =
                                 bluetoothDevices.value.first { it.id == deviceId }
                             Text(

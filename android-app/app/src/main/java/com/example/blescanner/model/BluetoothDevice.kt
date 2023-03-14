@@ -12,11 +12,11 @@ data class BluetoothDevice(
     override fun equals(other: Any?): Boolean {
         if (other === this) return true
         if (other !is BluetoothDevice) return false
-        return id == other.id && name == other.name
+        return id == other.id
     }
 
     override fun hashCode(): Int {
-        return Objects.hash(id, name)
+        return Objects.hash(id)
     }
 }
 
