@@ -5,17 +5,13 @@ import android.app.Application
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
-import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.AndroidViewModel
 import com.example.blescanner.model.BluetoothDevice
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 
 class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -23,7 +19,7 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
 
     private val _bluetoothDevices: MutableStateFlow<List<BluetoothDevice>> =
         MutableStateFlow(emptyList())
-    val bluetoothDevices: StateFlow<List<BluetoothDevice>> = _bluetoothDevices
+    val bluetoothDevices: Flow<List<BluetoothDevice>> = _bluetoothDevices.debounce(1000)
 
     private val bluetoothAdapter: BluetoothAdapter by lazy {
         val bluetoothManager =
@@ -38,7 +34,10 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
         @SuppressLint("MissingPermission")
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val scannedDevice = BluetoothDevice(
-                id = result.device.address, rssi = result.rssi, name = result.device.name
+                id = result.device.address,
+                rssi = result.rssi,
+                name = result.device.name,
+                advertisements = result.scanRecord?.serviceUuids ?: emptyList()
             )
             scannedDevices.remove(scannedDevice)
             scannedDevices.add(scannedDevice)

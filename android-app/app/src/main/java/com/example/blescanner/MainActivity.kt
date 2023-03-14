@@ -11,6 +11,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,9 +27,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.blescanner.model.BluetoothDevice
 import com.example.blescanner.model.BluetoothDeviceData
 import com.example.blescanner.ui.theme.BLEScannerTheme
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.launch
 
 const val REQUEST_ENABLE_BT: Int = 1
 const val TAG = "MainActivity"
@@ -59,14 +66,34 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             BLEScannerTheme {
-                val bluetoothDevices = bleViewModel.bluetoothDevices.collectAsState()
-                // A surface container using the 'background' color from the theme
-                Log.d(TAG, "RENDERING BLUETOOTH DEVICES")
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colors.background
+                    modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
                 ) {
-                    DeviceList(devices = bluetoothDevices.value)
+                    val navController = rememberNavController()
+                    val bluetoothDevices = bleViewModel.bluetoothDevices.collectAsState(
+                        emptyList()
+                    )
+                    NavHost(navController = navController, startDestination = "scanner") {
+                        composable("scanner") {
+                            DeviceList(
+                                devices = bluetoothDevices.value,
+                                onNavigateToDevice = { deviceId ->
+                                    navController.navigate(
+                                        "device/$deviceId"
+                                    )
+                                })
+                        }
+                        composable("device/{deviceId}") { backStackEntry ->
+                            val deviceId =
+                                backStackEntry.arguments?.getString("deviceId") ?: "no id :("
+                            Log.d(TAG, deviceId)
+                            val device =
+                                bluetoothDevices.value.first { it.id == deviceId }
+                            Text(
+                                text = "${device.id} ${device.rssi} ${device.advertisements}"
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -79,8 +106,7 @@ class MainActivity : ComponentActivity() {
             turnOnBluetooth.launch(enableBtIntent)
         } else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.BLUETOOTH_SCAN
+                    this, Manifest.permission.BLUETOOTH_SCAN
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 Log.d(TAG, "No tiene permiso de bluetooth scan")
@@ -102,12 +128,19 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun DeviceRow(device: BluetoothDevice) {
-    Column(modifier = Modifier.padding(8.dp)) {
+fun DeviceRow(device: BluetoothDevice, onNavigateToDevice: (deviceId: String) -> Unit) {
+    Column(modifier = Modifier
+        .padding(8.dp)
+        .clickable { onNavigateToDevice(device.id) }) {
         Text(text = device.id, fontSize = 16.sp)
         Row(verticalAlignment = Alignment.Bottom) {
             Text(text = device.name ?: "<no name>", fontSize = 12.sp)
-            Text(modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Right, text = device.rssi.toString(), fontSize = 14.sp)
+            Text(
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Right,
+                text = device.rssi.toString(),
+                fontSize = 14.sp
+            )
         }
     }
 }
@@ -116,15 +149,17 @@ fun DeviceRow(device: BluetoothDevice) {
 @Composable
 fun DeviceRowPreview() {
     BLEScannerTheme {
-        DeviceRow(BluetoothDeviceData.sampleDevices.first())
+        DeviceRow(BluetoothDeviceData.sampleDevices.first()) {}
     }
 }
 
 @Composable
-fun DeviceList(devices: List<BluetoothDevice>) {
+fun DeviceList(
+    devices: List<BluetoothDevice>, onNavigateToDevice: (deviceId: String) -> Unit,
+) {
     LazyColumn {
         items(devices, key = { it.id }) {
-            DeviceRow(device = it)
+            DeviceRow(device = it, onNavigateToDevice = onNavigateToDevice)
         }
     }
 }
@@ -133,6 +168,6 @@ fun DeviceList(devices: List<BluetoothDevice>) {
 @Composable
 fun DeviceListPreview() {
     BLEScannerTheme {
-        DeviceList(devices = BluetoothDeviceData.sampleDevices)
+        DeviceList(devices = BluetoothDeviceData.sampleDevices) {}
     }
 }
