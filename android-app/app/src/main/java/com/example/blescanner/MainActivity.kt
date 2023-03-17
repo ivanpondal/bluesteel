@@ -11,10 +11,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -22,6 +25,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -70,6 +75,7 @@ class MainActivity : ComponentActivity() {
                     val bluetoothDevices = bleViewModel.bluetoothDevices.collectAsState(
                         emptyList()
                     )
+
                     NavHost(navController = navController, startDestination = "scanner") {
                         composable("scanner") {
                             DeviceList(
@@ -125,18 +131,45 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun DeviceRow(device: BluetoothDevice, onNavigateToDevice: (deviceId: String) -> Unit) {
-    Column(modifier = Modifier
-        .padding(8.dp)
-        .clickable { onNavigateToDevice(device.id) }) {
-        Text(text = device.id, fontSize = 16.sp)
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(text = device.name ?: "<no name>", fontSize = 12.sp)
+    Card(modifier = Modifier.clickable { onNavigateToDevice(device.id) }) {
+        Column(
+            modifier = Modifier
+                .padding(10.dp)
+        ) {
+            Text(text = device.id, fontSize = 16.sp, fontWeight = FontWeight.ExtraLight)
+            Spacer(modifier = Modifier.size(6.dp))
             Text(
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Right,
-                text = device.rssi.toString(),
-                fontSize = 14.sp
+                text = device.name ?: "<no name>",
+                fontSize = 12.sp,
             )
+            Spacer(modifier = Modifier.size(6.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = "Advertised services:",
+                    fontSize = 12.sp,
+                )
+                Spacer(modifier = Modifier.size(6.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .size(14.dp)
+                        .background(color = MaterialTheme.colors.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = device.advertisements.size.toString(),
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colors.onPrimary,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Right,
+                    text = "RSSI: ${device.rssi}",
+                    fontSize = 12.sp
+                )
+            }
         }
     }
 }
@@ -153,7 +186,10 @@ fun DeviceRowPreview() {
 fun DeviceList(
     devices: List<BluetoothDevice>, onNavigateToDevice: (deviceId: String) -> Unit,
 ) {
-    LazyColumn {
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(8.dp)
+    ) {
         items(devices, key = { it.id }) {
             DeviceRow(device = it, onNavigateToDevice = onNavigateToDevice)
         }
