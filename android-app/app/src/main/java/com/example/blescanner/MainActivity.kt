@@ -26,6 +26,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -91,9 +92,7 @@ class MainActivity : ComponentActivity() {
                                 backStackEntry.arguments?.getString("deviceId") ?: "no id :("
                             val device =
                                 bluetoothDevices.value.first { it.id == deviceId }
-                            Text(
-                                text = "${device.id} ${device.rssi} ${device.advertisements}"
-                            )
+                            DeviceDetail(device = device)
                         }
                     }
                 }
@@ -201,5 +200,65 @@ fun DeviceList(
 fun DeviceListPreview() {
     BLEScannerTheme {
         DeviceList(devices = BluetoothDeviceData.sampleDevices) {}
+    }
+}
+
+@Composable
+fun DeviceDetail(device: BluetoothDevice) {
+    Column {
+        Column(
+            Modifier
+                .padding(12.dp)
+                .fillMaxWidth()
+        ) {
+            Text(
+                text = device.id,
+                fontSize = 24.sp
+            )
+            Spacer(modifier = Modifier.size(24.dp))
+            Text(
+                text = "Name: ${device.name ?: "<no name>"}"
+            )
+            Spacer(modifier = Modifier.size(24.dp))
+            Text(
+                text = "RSSI: ${device.rssi}"
+            )
+            Spacer(modifier = Modifier.size(24.dp))
+
+            Text(
+                text = "Advertised services",
+                fontWeight = FontWeight.Bold
+            )
+        }
+        LazyColumn(
+            Modifier
+                .padding(10.dp)
+                .fillMaxWidth()
+        ) {
+            items(device.advertisements) {
+                Card(elevation = 2.dp, modifier = Modifier.fillMaxWidth().padding(2.dp)) {
+                    Text(
+                        text = it.toString(),
+                        Modifier.padding(8.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun DeviceDetailPreview() {
+    BLEScannerTheme {
+        DeviceDetail(BluetoothDeviceData.sampleDevices.first())
+    }
+}
+
+@Preview
+@Composable
+fun DeviceWithAdvertisementsDetailPreview() {
+    BLEScannerTheme {
+        DeviceDetail(BluetoothDeviceData.sampleDevices.get(1))
     }
 }
