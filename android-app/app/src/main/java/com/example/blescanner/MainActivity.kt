@@ -123,6 +123,7 @@ class MainActivity : ComponentActivity() {
             }
             Log.d(TAG, "Start scanning")
             bleViewModel.startScan()
+            bleViewModel.startAdvertisement()
         }
     }
 
