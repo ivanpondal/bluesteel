@@ -2,8 +2,7 @@ package com.example.blescanner
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
+import android.bluetooth.*
 import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
@@ -16,9 +15,15 @@ import androidx.annotation.RequiresPermission
 import androidx.lifecycle.AndroidViewModel
 import com.example.blescanner.model.BluetoothDevice
 import kotlinx.coroutines.flow.*
+import java.nio.charset.StandardCharsets
 import java.util.*
 
+
+private val SERVICE_UUID = UUID.fromString("FE4B1073-17BB-4982-955F-28702F277F19")
+private val CHARACTERISTIC_UUID = UUID.fromString("A5C46D55-280D-4B9E-8335-BCA4C0977BDB")
+
 class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(application) {
+
 
     private val scannedDevices: MutableSet<BluetoothDevice> = mutableSetOf()
 
@@ -26,11 +31,14 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
         MutableStateFlow(emptyList())
     val bluetoothDevices: Flow<List<BluetoothDevice>> = _bluetoothDevices.debounce(1000)
 
+    private val bluetoothManager: BluetoothManager by lazy {
+        application.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    }
+
     private val bluetoothAdapter: BluetoothAdapter by lazy {
-        val bluetoothManager =
-            application.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothManager.adapter
     }
+
 
     val bluetoothEnabled = bluetoothAdapter.isEnabled
 
@@ -74,15 +82,73 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
         }
     }
 
-    @RequiresPermission(value = "android.permission.BLUETOOTH_ADVERTISE")
+    private val gattServerCallback = object : BluetoothGattServerCallback() {
+
+        override fun onConnectionStateChange(
+            device: android.bluetooth.BluetoothDevice?,
+            status: Int,
+            newState: Int
+        ) {
+            super.onConnectionStateChange(device, status, newState)
+
+            Log.d(
+                TAG,
+                "onConnectionStateChange: Server $device status: $status state: $newState"
+            )
+        }
+
+        override fun onCharacteristicWriteRequest(
+            device: android.bluetooth.BluetoothDevice?,
+            requestId: Int,
+            characteristic: BluetoothGattCharacteristic?,
+            preparedWrite: Boolean,
+            responseNeeded: Boolean,
+            offset: Int,
+            value: ByteArray?
+        ) {
+            super.onCharacteristicWriteRequest(
+                device,
+                requestId,
+                characteristic,
+                preparedWrite,
+                responseNeeded,
+                offset,
+                value
+            )
+
+            value?.let {
+                val message = String(value, StandardCharsets.UTF_8);
+                Log.d(TAG, "Received value from $device: $message")
+            }
+        }
+    }
+
+    private fun setupGattService(): BluetoothGattService {
+        // Setup gatt service
+        val service = BluetoothGattService(SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY)
+        // need to ensure that the property is writable and has the write permission
+        val messageCharacteristic = BluetoothGattCharacteristic(
+            CHARACTERISTIC_UUID,
+            BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE,
+            BluetoothGattCharacteristic.PERMISSION_WRITE
+        )
+        service.addCharacteristic(messageCharacteristic)
+
+        return service
+    }
+
+    @RequiresPermission(allOf = ["android.permission.BLUETOOTH_ADVERTISE", "android.permission.BLUETOOTH_CONNECT"])
     fun startAdvertisement() {
+        val gattServer = bluetoothManager.openGattServer(getApplication(), gattServerCallback)
+        gattServer.addService(setupGattService())
+
         val advertiser = bluetoothAdapter.bluetoothLeAdvertiser
 
         advertiser.startAdvertising(
             AdvertiseSettings.Builder().setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
                 .build(),
             AdvertiseData.Builder()
-                .addServiceUuid(ParcelUuid(UUID.fromString("FE4B1073-17BB-4982-955F-28702F277F19")))
+                .addServiceUuid(ParcelUuid(SERVICE_UUID))
                 .build(),
             advertisementCallback
         )
