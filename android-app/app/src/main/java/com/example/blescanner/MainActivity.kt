@@ -1,6 +1,7 @@
 package com.example.blescanner
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -17,13 +18,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Card
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -92,7 +91,18 @@ class MainActivity : ComponentActivity() {
                                 backStackEntry.arguments?.getString("deviceId") ?: "no id :("
                             val device =
                                 bluetoothDevices.value.first { it.id == deviceId }
-                            DeviceDetail(device = device)
+                            DeviceDetail(device = device, onConnect = { id ->
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
+                                        applicationContext,
+                                        Manifest.permission.BLUETOOTH_CONNECT
+                                    ) != PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    requestLocationPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
+                                } else {
+                                    bleViewModel.stopScan()
+                                    bleViewModel.connectGatt(id)
+                                }
+                            })
                         }
                     }
                 }
@@ -205,7 +215,7 @@ fun DeviceListPreview() {
 }
 
 @Composable
-fun DeviceDetail(device: BluetoothDevice) {
+fun DeviceDetail(device: BluetoothDevice, onConnect: (deviceId: String) -> Unit) {
     Column {
         Column(
             Modifier
@@ -237,13 +247,27 @@ fun DeviceDetail(device: BluetoothDevice) {
                 .fillMaxWidth()
         ) {
             items(device.advertisements) {
-                Card(elevation = 2.dp, modifier = Modifier.fillMaxWidth().padding(2.dp)) {
+                Card(
+                    elevation = 2.dp, modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(2.dp)
+                ) {
                     Text(
                         text = it.toString(),
                         Modifier.padding(8.dp)
                     )
                 }
             }
+        }
+        Spacer(modifier = Modifier.weight(1.0f))
+        Button(
+            onClick = { onConnect(device.id) },
+            contentPadding = PaddingValues(64.dp, 12.dp, 64.dp, 12.dp),
+            modifier = Modifier
+                .align(alignment = CenterHorizontally)
+                .padding(bottom = 16.dp),
+        ) {
+            Text("CONNECT", fontSize = 16.sp)
         }
     }
 }
@@ -252,7 +276,7 @@ fun DeviceDetail(device: BluetoothDevice) {
 @Composable
 fun DeviceDetailPreview() {
     BLEScannerTheme {
-        DeviceDetail(BluetoothDeviceData.sampleDevices.first())
+        DeviceDetail(BluetoothDeviceData.sampleDevices.first()) { _ -> }
     }
 }
 
@@ -260,6 +284,6 @@ fun DeviceDetailPreview() {
 @Composable
 fun DeviceWithAdvertisementsDetailPreview() {
     BLEScannerTheme {
-        DeviceDetail(BluetoothDeviceData.sampleDevices.get(1))
+        DeviceDetail(BluetoothDeviceData.sampleDevices[1]) { _ -> }
     }
 }

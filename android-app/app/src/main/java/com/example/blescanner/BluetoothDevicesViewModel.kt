@@ -1,5 +1,6 @@
 package com.example.blescanner
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Application
 import android.bluetooth.*
@@ -9,9 +10,11 @@ import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.AndroidViewModel
 import com.example.blescanner.model.BluetoothDevice
 import kotlinx.coroutines.flow.*
@@ -38,6 +41,9 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
     private val bluetoothAdapter: BluetoothAdapter by lazy {
         bluetoothManager.adapter
     }
+
+    private val connectedGatts: MutableMap<String, BluetoothGatt> =
+        mutableMapOf()
 
 
     val bluetoothEnabled = bluetoothAdapter.isEnabled
@@ -66,6 +72,11 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
     @RequiresPermission(value = "android.permission.BLUETOOTH_SCAN")
     fun startScan() {
         bluetoothAdapter.bluetoothLeScanner.startScan(scanCallback)
+    }
+
+    @RequiresPermission(value = "android.permission.BLUETOOTH_SCAN")
+    fun stopScan() {
+        bluetoothAdapter.bluetoothLeScanner.stopScan(scanCallback)
     }
 
     private val advertisementCallback = object : AdvertiseCallback() {
@@ -152,5 +163,45 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
                 .build(),
             advertisementCallback
         )
+    }
+
+    private val gattClientCallback = object : BluetoothGattCallback() {
+        @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
+        override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
+            super.onConnectionStateChange(gatt, status, newState)
+
+            val gattStatus = if (BluetoothGatt.GATT_SUCCESS == status) {
+                "success"
+            } else if (BluetoothGatt.GATT_FAILURE == status) {
+                "failure"
+            } else {
+                "unknown $status"
+            }
+
+            val state = if (BluetoothGatt.STATE_CONNECTED == newState) {
+                "connected"
+            } else if (BluetoothGatt.STATE_CONNECTING == newState) {
+                "connecting"
+            } else if (BluetoothGatt.STATE_DISCONNECTED == newState) {
+                "disconnected"
+            } else {
+                "unknown $newState"
+            }
+
+            Log.d(TAG, "connection state change, status: $gattStatus, state: $state")
+
+            if (gattStatus == "success" && state == "connected" && gatt !== null) {
+                connectedGatts[gatt.device.address] = gatt
+            } else {
+                gatt?.close()
+            }
+        }
+
+    }
+
+    @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
+    fun connectGatt(id: String) {
+        val bluetoothDevice = bluetoothAdapter.getRemoteDevice(id)
+        bluetoothDevice.connectGatt(getApplication(), false, gattClientCallback)
     }
 }
