@@ -11,6 +11,7 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
@@ -18,6 +19,7 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.AndroidViewModel
 import com.example.blescanner.model.BluetoothDevice
 import kotlinx.coroutines.flow.*
+import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.util.*
 
@@ -192,16 +194,52 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
 
             if (gattStatus == "success" && state == "connected" && gatt !== null) {
                 connectedGatts[gatt.device.address] = gatt
+                gatt.discoverServices()
             } else {
                 gatt?.close()
             }
         }
 
+        @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
+        override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+            super.onServicesDiscovered(gatt, status)
+
+            if (status == BluetoothGatt.GATT_SUCCESS && gatt !== null) {
+                val gattService = gatt.getService(SERVICE_UUID)
+
+                gattService?.let { service ->
+                    val characteristic = service.getCharacteristic(CHARACTERISTIC_UUID)
+                    val message = "mE pERdonAs?".toByteArray(charset = Charsets.UTF_8)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        gatt.writeCharacteristic(
+                            characteristic,
+                            message,
+                            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+                        )
+                    } else {
+                        characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+                        characteristic.value= message
+                        gatt.writeCharacteristic(characteristic)
+                    }
+                }
+            } else {
+                Log.d(TAG, "discovery failed with status $status")
+            }
+        }
     }
 
     @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
     fun connectGatt(id: String) {
         val bluetoothDevice = bluetoothAdapter.getRemoteDevice(id)
-        bluetoothDevice.connectGatt(getApplication(), false, gattClientCallback)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            bluetoothDevice.connectGatt(
+                getApplication(),
+                false,
+                gattClientCallback,
+                android.bluetooth.BluetoothDevice.TRANSPORT_LE
+            )
+        } else {
+            bluetoothDevice.connectGatt(getApplication(), false, gattClientCallback)
+        }
     }
 }
