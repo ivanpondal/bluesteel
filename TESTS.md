@@ -43,3 +43,5 @@ We'll look at different metrics in order to evaluate the effectiveness of each m
 | Network latency     | Time a request and response is travelling in the air |
 | Processing time     | Time processing a given request |
 | Response time       | Network latency + Processing time |
+
+![Bluetooth communication with ACKs](diagrams/bluetooth_communication.png)
