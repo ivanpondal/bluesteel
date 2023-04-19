@@ -44,4 +44,6 @@ We'll look at different metrics in order to evaluate the effectiveness of each m
 | Processing time     | Time processing a given request |
 | Response time       | Network latency + Processing time |
 
+#### Communication with write & indication ACK
+
 ![Bluetooth communication with ACKs](diagrams/bluetooth_communication.png)
