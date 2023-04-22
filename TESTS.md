@@ -56,21 +56,32 @@ our product.
 
 #### Only writes
 
-The client sends a series of numbered messages to the server without expecting a
-reply.
-
-The goal is to see how reliable message sending is and how it is affected by the
-different variables described earlier.
+After a successful connection, the client sends a series of numbered messages to
+the server without expecting a reply.
 
 | Test case | MTU | Throttling | In Background | ACK      | Distance | # Connections | # Messages |
 | --------- | --- | ---------- | ------------- | -------- | -------- | ------------- | ---------- |
-| OW-1      | Max | None       | None          | Yes      | 1 meter  | 1             | 100        |
-
+| SR-OW-1   | Max | None       | None          | Yes      | 1 meter  | 1             | 100        |
 
 #### Only indications
 
+After a successful connection, the server sends a series of numbered messages to
+the client without expecting a reply.
+
 #### Ping pong - Writes & indications
+
+After a successful connection, client and server talk to each other through a
+series of writes and indication. These will be synchronized meaning the server
+will only reply to a message from the client and vice versa.
 
 #### Parallell - Writes & indications
 
+After a successful connection, client and server talk to each other through a
+series of writes and indication. These won't be synchronized. Each will send a
+fixed number of messages at their own rate.
+
 #### Subscription - Read & indications
+
+After a successful connection, client reads a message from the server.
+Afterwards, server updates its message but only notifies to client it has been
+updated. Client then reads the updated message.
