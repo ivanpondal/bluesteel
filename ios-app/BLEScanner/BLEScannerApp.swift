@@ -16,7 +16,7 @@ struct BLEScannerApp: App {
                     .tabItem {
                         Label("Scanner", systemImage: "magnifyingglass")
                     }
-                ConnectionsListView()
+                ConnectionsListView(connectedDevices: Device.sampleData)
                     .tabItem{
                         Label("Connections", systemImage: "link")
                     }

@@ -13,18 +13,23 @@ struct ConnectionsListView: View {
     @State private var toggle: Bool = false
     @State private var testCase: String = ""
     private let testCases = ["SR-OW-1"]
-
+    
     var body: some View {
         VStack{
             List(connectedDevices) { connectedDevice in
                 Toggle("\(connectedDevice.id)", isOn: $toggle).toggleStyle(.switch)
             }
-            Picker("Select test case", selection: $testCase){
-                ForEach(testCases, id: \.self) {
-                    Text($0)
-                }
-            }
-            Button("Run test", action: {
+            Spacer()
+            HStack{
+                Text("Test case")
+                Divider()
+                Picker("", selection: $testCase){
+                    ForEach(testCases, id: \.self) {
+                        Text($0)
+                    }
+                }.pickerStyle(.menu)
+            }.fixedSize()
+            Button("Run", action: {
             }).padding()
         }
     }
