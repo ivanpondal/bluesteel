@@ -63,6 +63,21 @@ the server without expecting a reply.
 | --------- | --- | ---------- | ------------- | -------- | -------- | ------------- | ---------- |
 | SR-OW-1   | Max | None       | None          | Yes      | 1 meter  | 1             | 100        |
 
+##### Test steps
+
+**N**: Number of concurrent connections.
+
+**M**: Number of messages to send.
+
+1. Connect to **N** devices successfully.
+2. Negotiate desired MTU.
+3. Click button to trigger test.
+4. Write payload with test delivery method.
+5. If using ACK, wait for it.
+6. Check if should wait any longer to comply with the throttling budget.
+7. If messages sent is less than **M**, go to step 4.
+8. Report test result.
+
 #### Only indications
 
 After a successful connection, the server sends a series of numbered messages to
