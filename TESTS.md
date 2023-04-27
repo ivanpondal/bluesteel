@@ -63,8 +63,6 @@ the server without expecting a reply.
 | --------- | --- | ---------- | ------------- | -------- | -------- | ------------- | ---------- |
 | SR-OW-1   | Max | None       | None          | Yes      | 1 meter  | 1             | 100        |
 
-##### Test steps
-
 **N**: Number of concurrent connections.
 
 **M**: Number of messages to send.
