@@ -11,7 +11,16 @@ import SwiftUI
 struct BLEScannerApp: App {
     var body: some Scene {
         WindowGroup {
-            DeviceListView()
+            TabView {
+                DeviceListView()
+                    .tabItem {
+                        Label("Scanner", systemImage: "magnifyingglass")
+                    }
+                ConnectionsListView()
+                    .tabItem{
+                        Label("Connections", systemImage: "link")
+                    }
+            }
         }
     }
 }
