@@ -19,12 +19,15 @@ struct PeripheralAdvertisement {
 class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
     var centralManager: CBCentralManager?
     var peripheralManager: CBPeripheralManager?
-    
+
     var stateSubject: CurrentValueSubject<CBManagerState, Never> = .init(.unknown)
     var peripheralSubject: PassthroughSubject<PeripheralAdvertisement, Never> = .init()
-    
-    var connectedPeripherals: Dictionary<UUID, CBPeripheral> = [:]
-    
+
+    private var connectedPeripherals: Dictionary<UUID, CBPeripheral> = [:]
+
+    var connectionEventSubject: PassthroughSubject<CBPeripheral, Never> = .init()
+    var disconnectionEventSubject: PassthroughSubject<CBPeripheral, Never> = .init()
+
     func start() {
         centralManager = CBCentralManager(delegate: self, queue: .global(qos: .utility), options: [CBCentralManagerOptionShowPowerAlertKey: true])
         peripheralManager = CBPeripheralManager(delegate: self, queue: .global(qos: .utility), options: [CBPeripheralManagerOptionShowPowerAlertKey: true])
@@ -35,11 +38,13 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
     }
     
     func connect(toPeripheralWithId uuid: UUID) {
-        guard let peripheral = peripheral(withId: uuid) else { return }
-        
-        connectedPeripherals.updateValue(peripheral, forKey: uuid)
-        
-        centralManager?.connect(peripheral)
+        if (!connectedPeripherals.contains(where: {$0.key == uuid})){
+            guard let peripheral = peripheral(withId: uuid) else { return }
+
+            connectedPeripherals.updateValue(peripheral, forKey: uuid)
+
+            centralManager?.connect(peripheral)
+        }
     }
 }
 
@@ -77,12 +82,21 @@ extension BluetoothRadio: CBCentralManagerDelegate {
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         peripheral.delegate = self
+
+        connectionEventSubject.send(peripheral)
         print("connected to ", peripheral)
         peripheral.discoverServices([BluetoothRadio.serviceUUID])
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         print("failed to connect to ", peripheral, error ?? "unkown error")
+        connectedPeripherals.removeValue(forKey: peripheral.identifier)
+    }
+
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        connectedPeripherals.removeValue(forKey: peripheral.identifier)
+        disconnectionEventSubject.send(peripheral)
+        print("disconnected from ", peripheral, error != nil ? "cause \(String(describing: error))" : "")
     }
 }
 

@@ -9,14 +9,17 @@ import SwiftUI
 
 @main
 struct BLEScannerApp: App {
+
+    var bluetoothRadio: BluetoothRadio = BluetoothRadio()
+
     var body: some Scene {
         WindowGroup {
             TabView {
-                DeviceListView()
+                DeviceListView(bluetoothRadio: bluetoothRadio)
                     .tabItem {
                         Label("Scanner", systemImage: "magnifyingglass")
                     }
-                ConnectionsListView(connectedDevices: Device.sampleData)
+                ConnectionsListView(bluetoothRadio: bluetoothRadio)
                     .tabItem{
                         Label("Connections", systemImage: "link")
                     }
