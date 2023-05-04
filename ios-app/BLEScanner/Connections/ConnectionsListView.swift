@@ -16,30 +16,34 @@ struct ConnectionsListView: View {
     private let testCases = ["SR-OW-1"]
     
     var body: some View {
-        VStack{
-            List(connectedDevices) { connectedDevice in
-                Toggle("\(connectedDevice.id)", isOn: $toggle).toggleStyle(.switch)
+        NavigationStack {
+            VStack {
+                List(connectedDevices) { connectedDevice in
+                    Toggle("\(connectedDevice.id)", isOn: $toggle).toggleStyle(.switch)
+                }
+                Spacer()
+                HStack{
+                    Text("Test case")
+                    Divider()
+                    Picker("", selection: $testCase){
+                        ForEach(testCases, id: \.self) {
+                            Text($0)
+                        }
+                    }.pickerStyle(.menu)
+                }.fixedSize()
+                NavigationLink(destination: TestCaseView(activeTestCase: TestCase.sampleData.first!).navigationBarHidden(true)) {
+                    Button("Run", action: {}).allowsHitTesting(false)
+                }
             }
-            Spacer()
-            HStack{
-                Text("Test case")
-                Divider()
-                Picker("", selection: $testCase){
-                    ForEach(testCases, id: \.self) {
-                        Text($0)
-                    }
-                }.pickerStyle(.menu)
-            }.fixedSize()
-            Button("Run", action: {
-            }).padding()
-        }.onReceive(bluetoothRadio.connectionEventSubject
+        }
+        .onReceive(bluetoothRadio.connectionEventSubject
             .receive(on: RunLoop.main)
             .map({ peripheral in
                 return Device(id: peripheral.identifier,rssi: 0, name:peripheral.name, advertisedServices: [])
             })){ connectedDevices.append($0) }
         .onReceive(bluetoothRadio.disconnectionEventSubject.receive(on: RunLoop.main)){ device in
-            connectedDevices.removeAll(where: {$0.id == device.identifier})
-        }
+                connectedDevices.removeAll(where: {$0.id == device.identifier})
+            }
     }
 }
 

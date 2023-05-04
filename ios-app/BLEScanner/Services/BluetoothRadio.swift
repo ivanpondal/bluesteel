@@ -141,7 +141,7 @@ extension BluetoothRadio: CBPeripheralDelegate {
             print("peripheral is advertising service")
         }
     }
-    
+
     func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
         let firstRequest = requests[0]
         
@@ -152,9 +152,9 @@ extension BluetoothRadio: CBPeripheralDelegate {
         }
         peripheral.respond(to: firstRequest, withResult: .success)
     }
-    
+
     // MARK: Peripheral client
-    
+
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         if error != nil {
             print("service discovery failed: ", error!)
@@ -176,4 +176,5 @@ extension BluetoothRadio: CBPeripheralDelegate {
             peripheral.writeValue(data, for: firstCharacteristic, type: .withoutResponse)
         }
     }
+
 }
