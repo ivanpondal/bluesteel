@@ -19,6 +19,7 @@
 		FAD2996028F4D89A00F53608 /* BLEScannerUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD2995F28F4D89A00F53608 /* BLEScannerUITestsLaunchTests.swift */; };
 		FAD2996E28F4DADD00F53608 /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD2996D28F4DADD00F53608 /* Device.swift */; };
 		FAE3F2F729003A0300C4C036 /* BluetoothRadio.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE3F2F629003A0300C4C036 /* BluetoothRadio.swift */; };
+		FAE62FD32A0D23D3000A9C0A /* TestRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE62FD22A0D23D3000A9C0A /* TestRunner.swift */; };
 		FAF1C6D629FACADB006841B3 /* ConnectionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAF1C6D529FACADB006841B3 /* ConnectionsListView.swift */; };
 		FAFA278B2906F12400CE0AE8 /* DeviceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAFA278A2906F12400CE0AE8 /* DeviceView.swift */; };
 /* End PBXBuildFile section */
@@ -57,6 +58,7 @@
 		FAD2995F28F4D89A00F53608 /* BLEScannerUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEScannerUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		FAD2996D28F4DADD00F53608 /* Device.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Device.swift; sourceTree = "<group>"; };
 		FAE3F2F629003A0300C4C036 /* BluetoothRadio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothRadio.swift; sourceTree = "<group>"; };
+		FAE62FD22A0D23D3000A9C0A /* TestRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestRunner.swift; sourceTree = "<group>"; };
 		FAF1C6D529FACADB006841B3 /* ConnectionsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionsListView.swift; sourceTree = "<group>"; };
 		FAFA278A2906F12400CE0AE8 /* DeviceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -159,6 +161,7 @@
 			isa = PBXGroup;
 			children = (
 				FAE3F2F629003A0300C4C036 /* BluetoothRadio.swift */,
+				FAE62FD22A0D23D3000A9C0A /* TestRunner.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -319,6 +322,7 @@
 				FA9A4C9C2A042D160056E5A1 /* TestCaseView.swift in Sources */,
 				FA9A4C9E2A0433740056E5A1 /* TestCase.swift in Sources */,
 				FAF1C6D629FACADB006841B3 /* ConnectionsListView.swift in Sources */,
+				FAE62FD32A0D23D3000A9C0A /* TestRunner.swift in Sources */,
 				FAD2994328F4D89800F53608 /* BLEScannerApp.swift in Sources */,
 				FAFA278B2906F12400CE0AE8 /* DeviceView.swift in Sources */,
 			);

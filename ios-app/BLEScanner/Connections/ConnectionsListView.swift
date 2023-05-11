@@ -11,15 +11,27 @@ import SwiftUI
 struct ConnectionsListView: View {
     var bluetoothRadio: BluetoothRadio
     @State var connectedDevices: [Device] = []
-    @State private var toggle: Bool = false
+    @State private var selectedDevices: [UUID: Bool]
     @State private var testCase: String = ""
     private let testCases = ["SR-OW-1"]
-    
+
+    init(bluetoothRadio: BluetoothRadio, connectedDevices: [Device] = []) {
+        self.bluetoothRadio = bluetoothRadio
+        self.connectedDevices = connectedDevices
+        self.selectedDevices = connectedDevices.reduce(into: [UUID: Bool]()) {
+            $0[$1.id] = false
+        }
+    }
+
     var body: some View {
         NavigationStack {
             VStack {
                 List(connectedDevices) { connectedDevice in
-                    Toggle("\(connectedDevice.id)", isOn: $toggle).toggleStyle(.switch)
+                    Toggle(connectedDevice.id.uuidString,
+                           isOn: .init(
+                            get: { selectedDevices[connectedDevice.id, default: false] },
+                            set: { selectedDevices[connectedDevice.id] = $0 }))
+                    .toggleStyle(.switch)
                 }
                 Spacer()
                 HStack{

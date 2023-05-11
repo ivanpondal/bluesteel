@@ -18,7 +18,14 @@ struct TestCaseView: View {
                 .font(.title)
                 .padding()
                 .frame(maxWidth: .infinity)
-            Text("Current state: RUNNING")
+            List(activeTestCase.devices) { connectedDevice in
+                VStack {
+                    Text(connectedDevice.id.uuidString)
+                        .font(.subheadline).padding(4)
+                    Text("Current state: RUNNING 🏃‍♂️")
+                }.padding().frame(maxWidth: .infinity)
+            }.listStyle(.grouped)
+
             Spacer()
             Button("Stop", action: {})
         }

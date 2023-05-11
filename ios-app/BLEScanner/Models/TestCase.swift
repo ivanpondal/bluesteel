@@ -9,10 +9,11 @@ import Foundation
 
 struct TestCase : Identifiable, Equatable {
     let id : String
+    let devices: [Device]
 }
 
 extension TestCase {
     static var sampleData: [TestCase] {
-        [TestCase(id: "SR-OW-1")]
+        [TestCase(id: "SR-OW-1", devices: Device.sampleData)]
     }
 }
