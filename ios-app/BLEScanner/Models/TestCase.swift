@@ -7,13 +7,17 @@
 
 import Foundation
 
+enum TestCaseId : String, CaseIterable {
+   case SR_OW_1
+}
+
 struct TestCase : Identifiable, Equatable {
-    let id : String
+    let id : TestCaseId
     let devices: [Device]
 }
 
 extension TestCase {
     static var sampleData: [TestCase] {
-        [TestCase(id: "SR-OW-1", devices: Device.sampleData)]
+        [TestCase(id: .SR_OW_1, devices: Device.sampleData)]
     }
 }

@@ -12,8 +12,7 @@ struct ConnectionsListView: View {
     var bluetoothRadio: BluetoothRadio
     @State private var connectedDevices: [Device] = []
     @State private var selectedDevices: [UUID: Bool] = [:]
-    @State private var testCase: String = ""
-    private let testCases = ["SR-OW-1"]
+    @State private var selectedTestCase: TestCaseId = TestCaseId.SR_OW_1
 
     var body: some View {
         NavigationStack {
@@ -29,14 +28,14 @@ struct ConnectionsListView: View {
                 HStack{
                     Text("Test case")
                     Divider()
-                    Picker("", selection: $testCase){
-                        ForEach(testCases, id: \.self) {
-                            Text($0)
+                    Picker("", selection: $selectedTestCase){
+                        ForEach(TestCaseId.allCases, id: \.self) {
+                            Text($0.rawValue.replacingOccurrences(of: "_", with: "-"))
                         }
                     }.pickerStyle(.menu)
                 }.fixedSize()
                 NavigationLink(destination: TestCaseView(activeTestCase: TestCase(
-                    id: testCase, devices: connectedDevices.filter({selectedDevices[$0.id] == true}))
+                    id: selectedTestCase, devices: connectedDevices.filter({selectedDevices[$0.id] == true}))
                 ).navigationBarHidden(true)) {
                     Button("Run", action: {}).allowsHitTesting(false)
                 }

@@ -14,7 +14,7 @@ struct TestCaseView: View {
 
     var body: some View {
         VStack{
-            Text("Test case: \"\(activeTestCase.id)\"")
+            Text("Test case: \"\(activeTestCase.id.rawValue.replacingOccurrences(of: "_", with: "-"))\"")
                 .font(.title)
                 .padding()
                 .frame(maxWidth: .infinity)
