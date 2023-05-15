@@ -30,12 +30,12 @@ struct ConnectionsListView: View {
                     Divider()
                     Picker("", selection: $selectedTestCase){
                         ForEach(TestCaseId.allCases, id: \.self) {
-                            Text($0.rawValue.replacingOccurrences(of: "_", with: "-"))
+                            Text($0.displayName())
                         }
                     }.pickerStyle(.menu)
                 }.fixedSize()
                 NavigationLink(destination: TestCaseView(activeTestCase: TestCase(
-                    id: selectedTestCase, devices: connectedDevices.filter({selectedDevices[$0.id] == true}))
+                    id: selectedTestCase, devices: connectedDevices.filter({selectedDevices[$0.id] == true})), bluetoothRadio: bluetoothRadio
                 ).navigationBarHidden(true)) {
                     Button("Run", action: {}).allowsHitTesting(false)
                 }

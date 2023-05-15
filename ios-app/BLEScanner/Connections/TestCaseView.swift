@@ -11,10 +11,11 @@ import SwiftUI
 struct TestCaseView: View {
 
     var activeTestCase: TestCase
+    var bluetoothRadio: BluetoothRadio
 
     var body: some View {
         VStack{
-            Text("Test case: \"\(activeTestCase.id.rawValue.replacingOccurrences(of: "_", with: "-"))\"")
+            Text("Test case: \"\(activeTestCase.id.displayName())\"")
                 .font(.title)
                 .padding()
                 .frame(maxWidth: .infinity)
@@ -28,6 +29,10 @@ struct TestCaseView: View {
 
             Spacer()
             Button("Stop", action: {})
+        }.task {
+            let testRunner = TestRunner(bluetoothRadio: bluetoothRadio, testCase: activeTestCase, device: activeTestCase.devices.first!)
+
+            await testRunner.run()
         }
     }
 }
@@ -35,6 +40,6 @@ struct TestCaseView: View {
 struct TestCaseView_Previews: PreviewProvider {
 
     static var previews: some View {
-        TestCaseView(activeTestCase: TestCase.sampleData.first!)
+        TestCaseView(activeTestCase: TestCase.sampleData.first!, bluetoothRadio: BluetoothRadio())
     }
 }

@@ -18,7 +18,21 @@ class TestRunner {
         self.device = device
     }
 
-    func run() {
+    func run() async {
+        do {
+            let _ = try await bluetoothRadio.discover(fromPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID)
+
+            let peripheralWithCharacteristic = try await bluetoothRadio.discover(fromPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
+
+            guard let service = peripheralWithCharacteristic.services?.first(where: {$0.uuid == BluetoothRadio.serviceUUID}) else { return }
+            guard let firstCharacteristic = service.characteristics?.first else { return }
+
+            guard let data = "HOLA MUNDO xd".data(using: .utf8) else { return }
+
+            peripheralWithCharacteristic.writeValue(data, for: firstCharacteristic, type: .withoutResponse)
+        } catch {
+            print("\(error)")
+        }
     }
 }
 

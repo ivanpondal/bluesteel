@@ -10,6 +10,10 @@ import CoreBluetooth
 import Combine
 import UIKit
 
+struct BluetoothError : Error {
+    var message: String
+}
+
 struct PeripheralAdvertisement {
     let peripheral: CBPeripheral
     let advertisements: [String: Any]
@@ -28,23 +32,56 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
     var connectionEventSubject: PassthroughSubject<CBPeripheral, Never> = .init()
     var disconnectionEventSubject: PassthroughSubject<CBPeripheral, Never> = .init()
 
+    var serviceDiscoveryContinuation: CheckedContinuation<CBPeripheral, Error>? = nil
+    var characteristicDiscoveryContinuation: CheckedContinuation<CBPeripheral, Error>? = nil
+
     func start() {
         centralManager = CBCentralManager(delegate: self, queue: .global(qos: .utility), options: [CBCentralManagerOptionShowPowerAlertKey: true])
         peripheralManager = CBPeripheralManager(delegate: self, queue: .global(qos: .utility), options: [CBPeripheralManagerOptionShowPowerAlertKey: true])
     }
     
-    private func peripheral(withId peripheralUUID: UUID) -> CBPeripheral? {
-        centralManager?.retrievePeripherals(withIdentifiers: [peripheralUUID])[0]
+    private func peripheral(withId peripheralUUID: UUID) throws -> CBPeripheral {
+        guard let peripheral = centralManager?.retrievePeripherals(withIdentifiers: [peripheralUUID])[0] else {
+            throw BluetoothError(message: "Could not find peripheral")
+        }
+        return peripheral
     }
     
     func connect(toPeripheralWithId uuid: UUID) {
         if (!connectedPeripherals.contains(where: {$0.key == uuid})){
-            guard let peripheral = peripheral(withId: uuid) else { return }
+            do {
+                let peripheral = try peripheral(withId: uuid)
 
-            connectedPeripherals.updateValue(peripheral, forKey: uuid)
+                connectedPeripherals.updateValue(peripheral, forKey: uuid)
 
-            centralManager?.connect(peripheral)
+                centralManager?.connect(peripheral)
+            } catch {
+                print(error)
+            }
         }
+    }
+
+    func discover(fromPeripheralWithId peripheralId: UUID, serviceId: CBUUID) async throws -> CBPeripheral {
+        let peripheral = try peripheral(withId: peripheralId)
+
+        return try await withCheckedThrowingContinuation({continuation in
+            peripheral.discoverServices([serviceId])
+            serviceDiscoveryContinuation = continuation
+        })
+    }
+
+    func discover(fromPeripheralWithId peripheralId: UUID, serviceId: CBUUID, characteristicId: CBUUID) async throws -> CBPeripheral {
+        let peripheral = try peripheral(withId: peripheralId)
+
+        return try await withCheckedThrowingContinuation({continuation in
+            guard let service = peripheral.services?.first(where: {$0.uuid == serviceId}) else {
+                continuation.resume(throwing: BluetoothError(message: "Service not found"))
+                return
+            }
+
+            peripheral.discoverCharacteristics([characteristicId], for: service)
+            characteristicDiscoveryContinuation = continuation
+        })
     }
 }
 
@@ -85,7 +122,6 @@ extension BluetoothRadio: CBCentralManagerDelegate {
 
         connectionEventSubject.send(peripheral)
         print("connected to ", peripheral)
-        peripheral.discoverServices([BluetoothRadio.serviceUUID])
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
@@ -156,25 +192,39 @@ extension BluetoothRadio: CBPeripheralDelegate {
     // MARK: Peripheral client
 
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        if error != nil {
-            print("service discovery failed: ", error!)
-        } else {
-            guard let firstService = peripheral.services?.first else { return }
-            
-            peripheral.discoverCharacteristics([BluetoothRadio.chracteristicUUID], for: firstService)
+        if let error {
+            print("service discovery failed: ", error)
+            guard let continuation = serviceDiscoveryContinuation else {
+                print("missing service discovery continuation")
+                return
+            }
+            continuation.resume(throwing: error)
+            return
         }
+        guard let continuation = serviceDiscoveryContinuation else {
+            print("missing service discovery continuation")
+            return
+        }
+        continuation.resume(returning: peripheral)
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        if error != nil {
-            print("characteristic discovery failed: ", error!)
-        } else {
-            guard let firstCharacteristic = service.characteristics?.first else { return }
-            
-            guard let data = "HOLA MUNDO xd".data(using: .utf8) else { return }
-            
-            peripheral.writeValue(data, for: firstCharacteristic, type: .withoutResponse)
+        if let error {
+            print("characteristic discovery failed: ", error)
+            guard let continuation = characteristicDiscoveryContinuation else {
+                print("missing characteristic discovery continuation")
+                return
+            }
+            continuation.resume(throwing: error)
+            return
         }
+
+        guard let continuation = characteristicDiscoveryContinuation else {
+            print("missing characteristic discovery continuation")
+            return
+        }
+
+        continuation.resume(returning: peripheral)
     }
 
 }

@@ -9,6 +9,10 @@ import Foundation
 
 enum TestCaseId : String, CaseIterable {
    case SR_OW_1
+
+    func displayName() -> String {
+        return rawValue.replacingOccurrences(of: "_", with: "-")
+    }
 }
 
 struct TestCase : Identifiable, Equatable {
