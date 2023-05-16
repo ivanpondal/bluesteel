@@ -34,6 +34,7 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
 
     var serviceDiscoveryContinuation: CheckedContinuation<CBPeripheral, Error>? = nil
     var characteristicDiscoveryContinuation: CheckedContinuation<CBPeripheral, Error>? = nil
+    var writeWithResponseContinuation: CheckedContinuation<Bool, Error>? = nil
 
     func start() {
         centralManager = CBCentralManager(delegate: self, queue: .global(qos: .utility), options: [CBCentralManagerOptionShowPowerAlertKey: true])
@@ -81,6 +82,19 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
 
             peripheral.discoverCharacteristics([characteristicId], for: service)
             characteristicDiscoveryContinuation = continuation
+        })
+    }
+
+    func writeWithResponse(toPeripheralWithId peripheralId: UUID, serviceId: CBUUID, characteristicId: CBUUID, data: Data) async throws {
+        let peripheral = try peripheral(withId: peripheralId)
+        guard let characteristic = peripheral.services?.first(where: {$0.uuid == serviceId})?
+            .characteristics?.first(where: {$0.uuid == characteristicId}) else {
+            throw BluetoothError(message: "Could not find characteristic")
+        }
+
+        let _ = try await withCheckedThrowingContinuation({continuation in
+            peripheral.writeValue(data, for: characteristic, type: .withResponse)
+            writeWithResponseContinuation = continuation
         })
     }
 }
@@ -142,7 +156,7 @@ extension BluetoothRadio: CBPeripheralDelegate {
     static let serviceUUID = CBUUID(string: "FE4B1073-17BB-4982-955F-28702F277F19")
     
     fileprivate func createService() -> CBMutableService {
-        let characteristic = CBMutableCharacteristic(type: BluetoothRadio.chracteristicUUID, properties: [.writeWithoutResponse], value: nil, permissions: [.writeable])
+        let characteristic = CBMutableCharacteristic(type: BluetoothRadio.chracteristicUUID, properties: [.writeWithoutResponse, .write], value: nil, permissions: [.writeable])
         let service = CBMutableService(type: BluetoothRadio.serviceUUID, primary: true)
         
         service.characteristics = [characteristic]
@@ -225,6 +239,25 @@ extension BluetoothRadio: CBPeripheralDelegate {
         }
 
         continuation.resume(returning: peripheral)
+    }
+
+
+    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        if let error {
+            print("write failed: ", error)
+            guard let continuation = writeWithResponseContinuation else {
+                return
+            }
+            continuation.resume(throwing: error)
+            return
+        }
+
+        guard let continuation = writeWithResponseContinuation else {
+            print("missing write with response continuation")
+            return
+        }
+
+        continuation.resume(returning: true)
     }
 
 }

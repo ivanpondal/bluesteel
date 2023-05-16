@@ -11,25 +11,31 @@ class TestRunner {
     let bluetoothRadio: BluetoothRadio
     let testCase: TestCase
     let device: Device
+    let stopwatch: Stopwatch
 
     init(bluetoothRadio: BluetoothRadio, testCase: TestCase, device: Device) {
         self.bluetoothRadio = bluetoothRadio
         self.testCase = testCase
         self.device = device
+        self.stopwatch = Stopwatch()
     }
 
     func run() async {
         do {
+
+            stopwatch.start()
             let _ = try await bluetoothRadio.discover(fromPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID)
+            print("service discovery time \(stopwatch.stop().formatted(.units(allowed: [.microseconds])))")
 
-            let peripheralWithCharacteristic = try await bluetoothRadio.discover(fromPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
-
-            guard let service = peripheralWithCharacteristic.services?.first(where: {$0.uuid == BluetoothRadio.serviceUUID}) else { return }
-            guard let firstCharacteristic = service.characteristics?.first else { return }
+            stopwatch.start()
+            let _ = try await bluetoothRadio.discover(fromPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
+            print("characteristic discovery time \(stopwatch.stop().formatted(.units(allowed: [.microseconds])))")
 
             guard let data = "HOLA MUNDO xd".data(using: .utf8) else { return }
 
-            peripheralWithCharacteristic.writeValue(data, for: firstCharacteristic, type: .withoutResponse)
+            stopwatch.start()
+            let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, data: data)
+            print("write with response time \(stopwatch.stop().formatted(.units(allowed: [.microseconds])))")
         } catch {
             print("\(error)")
         }
