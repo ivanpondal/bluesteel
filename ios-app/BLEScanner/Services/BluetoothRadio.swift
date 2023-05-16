@@ -97,6 +97,12 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
             writeWithResponseContinuation = continuation
         })
     }
+
+    func mtu(forPeripheralId peripheralId: UUID, withWriteType type: CBCharacteristicWriteType) throws -> Int {
+        let peripheral = try peripheral(withId: peripheralId)
+
+        return peripheral.maximumWriteValueLength(for: type)
+    }
 }
 
 
@@ -198,7 +204,7 @@ extension BluetoothRadio: CBPeripheralDelegate {
         for request in requests {
             guard let data = request.value else { peripheral.respond(to: firstRequest, withResult: .invalidAttributeValueLength); return }
             
-            print("receive message from ", request.central, String(bytes: data, encoding: .utf8)!)
+            print("receive message from ", request.central, String(bytes: data, encoding: .ascii)!)
         }
         peripheral.respond(to: firstRequest, withResult: .success)
     }
