@@ -7,6 +7,7 @@
 
 import Foundation
 
+@available(iOS 16, *)
 class Stopwatch {
     let clock: ContinuousClock = ContinuousClock()
     var startTime: ContinuousClock.Instant = .now
@@ -19,5 +20,13 @@ class Stopwatch {
     func stop() -> Duration {
         elapsedTime = startTime.duration(to: clock.now)
         return elapsedTime
+    }
+}
+
+@available(iOS 16, *)
+extension Duration {
+    func ms() -> Int64 {
+        let (sec, attosec) = self.components
+        return sec*1000 + attosec/(1_000_000_000_000_000)
     }
 }

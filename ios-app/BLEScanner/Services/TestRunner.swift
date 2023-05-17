@@ -7,11 +7,15 @@
 
 import Foundation
 
+@available(iOS 16, *)
 class TestRunner {
     let bluetoothRadio: BluetoothRadio
     let testCase: TestCase
     let device: Device
     let stopwatch: Stopwatch
+
+    @Published
+    var state: String = "RUNNING"
 
     init(bluetoothRadio: BluetoothRadio, testCase: TestCase, device: Device) {
         self.bluetoothRadio = bluetoothRadio
@@ -32,19 +36,22 @@ class TestRunner {
 
                 stopwatch.start()
                 let _ = try await bluetoothRadio.discover(fromPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID)
-                print("service discovery time \(stopwatch.stop().formatted(.units(allowed: [.microseconds])))")
+                print("service discovery time \(stopwatch.stop().ms()) ms")
 
                 stopwatch.start()
                 let _ = try await bluetoothRadio.discover(fromPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
-                print("characteristic discovery time \(stopwatch.stop().formatted(.units(allowed: [.microseconds])))")
+                print("characteristic discovery time \(stopwatch.stop().ms()) ms")
 
                 for i in 0..<100 {
+                    stopwatch.start()
                     let data = generateRandomBytes(count: mtu)
+                    print("\(i)th random bytes generation time \(stopwatch.stop().ms()) ms")
 
                     stopwatch.start()
                     let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, data: data)
-                    print("\(i)th write with response time \(stopwatch.stop().formatted(.units(allowed: [.microseconds])))")
+                    print("\(i)th write with response time \(stopwatch.stop().ms()) ms")
                 }
+                state = "FINISHED"
             }
         } catch {
             print("\(error)")
