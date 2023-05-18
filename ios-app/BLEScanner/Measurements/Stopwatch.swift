@@ -13,11 +13,16 @@ protocol Stopwatch {
 }
 
 class DateStopwatch : Stopwatch {
+    var startTime: Date = Date()
+    var elapsedTime: TimeInterval = .infinity
+
     func start() {
+        startTime = Date()
     }
 
     func stop() -> Int64 {
-        0
+        elapsedTime = Date().timeIntervalSince(startTime)
+        return .init(elapsedTime*1000)
     }
 }
 
