@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 
-struct ConnectionsListView: View {
+struct TestCaseListView: View {
     var bluetoothRadio: BluetoothRadio
     @State private var connectedDevices: [Device] = []
     @State private var selectedDevices: [UUID: Bool] = [:]
@@ -58,8 +58,8 @@ struct ConnectionsListView: View {
     }
 }
 
-struct ConnectionsListView_Previews: PreviewProvider {
+struct TestCaseListView_Previews: PreviewProvider {
     static var previews: some View {
-        ConnectionsListView(bluetoothRadio: BluetoothRadio())
+        TestCaseListView(bluetoothRadio: BluetoothRadio())
     }
 }

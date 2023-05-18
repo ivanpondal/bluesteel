@@ -19,7 +19,7 @@ struct BLEScannerApp: App {
                     .tabItem {
                         Label("Scanner", systemImage: "magnifyingglass")
                     }
-                ConnectionsListView(bluetoothRadio: bluetoothRadio)
+                TestCaseListView(bluetoothRadio: bluetoothRadio)
                     .tabItem{
                         Label("Connections", systemImage: "link")
                     }
