@@ -7,8 +7,22 @@
 
 import Foundation
 
+protocol Stopwatch {
+    mutating func start()
+    mutating func stop() -> Int64
+}
+
+class DateStopwatch : Stopwatch {
+    func start() {
+    }
+
+    func stop() -> Int64 {
+        0
+    }
+}
+
 @available(iOS 16, *)
-class Stopwatch {
+class ContinuousClockStopwatch : Stopwatch {
     let clock: ContinuousClock = ContinuousClock()
     var startTime: ContinuousClock.Instant = .now
     var elapsedTime: Duration = .zero
@@ -17,9 +31,9 @@ class Stopwatch {
         startTime = clock.now
     }
 
-    func stop() -> Duration {
+    func stop() -> Int64 {
         elapsedTime = startTime.duration(to: clock.now)
-        return elapsedTime
+        return elapsedTime.ms()
     }
 }
 

@@ -7,12 +7,11 @@
 
 import Foundation
 
-@available(iOS 16, *)
 class TestRunner {
     let bluetoothRadio: BluetoothRadio
     let testCase: TestCase
     let device: Device
-    let stopwatch: Stopwatch
+    var stopwatch: Stopwatch
 
     @Published
     var state: String = "RUNNING"
@@ -21,7 +20,11 @@ class TestRunner {
         self.bluetoothRadio = bluetoothRadio
         self.testCase = testCase
         self.device = device
-        self.stopwatch = Stopwatch()
+        if #available(iOS 16, *) {
+            self.stopwatch = ContinuousClockStopwatch()
+        } else {
+            self.stopwatch = DateStopwatch()
+        }
     }
 
     private func generateRandomBytes(count: Int) -> Data {
@@ -36,20 +39,20 @@ class TestRunner {
 
                 stopwatch.start()
                 let _ = try await bluetoothRadio.discover(fromPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID)
-                print("service discovery time \(stopwatch.stop().ms()) ms")
+                print("service discovery time \(stopwatch.stop()) ms")
 
                 stopwatch.start()
                 let _ = try await bluetoothRadio.discover(fromPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
-                print("characteristic discovery time \(stopwatch.stop().ms()) ms")
+                print("characteristic discovery time \(stopwatch.stop()) ms")
 
                 for i in 0..<100 {
                     stopwatch.start()
                     let data = generateRandomBytes(count: mtu)
-                    print("\(i)th random bytes generation time \(stopwatch.stop().ms()) ms")
+                    print("\(i)th random bytes generation time \(stopwatch.stop()) ms")
 
                     stopwatch.start()
                     let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, data: data)
-                    print("\(i)th write with response time \(stopwatch.stop().ms()) ms")
+                    print("\(i)th write with response time \(stopwatch.stop()) ms")
                 }
                 state = "FINISHED"
             }

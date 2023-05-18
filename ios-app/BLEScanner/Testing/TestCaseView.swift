@@ -36,12 +36,10 @@ struct TestCaseView: View {
             Spacer()
             Button("Stop", action: {})
         }.task {
-            if #available(iOS 16, *) {
-                let testRunner = TestRunner(bluetoothRadio: bluetoothRadio, testCase: activeTestCase, device: activeTestCase.devices.first!)
+            let testRunner = TestRunner(bluetoothRadio: bluetoothRadio, testCase: activeTestCase, device: activeTestCase.devices.first!)
 
-                testRunner.$state.sink(receiveValue: { testRunnerState = $0 }).store(in: &cancellables)
-                await testRunner.run()
-            }
+            testRunner.$state.sink(receiveValue: { testRunnerState = $0 }).store(in: &cancellables)
+            await testRunner.run()
         }
     }
 }
