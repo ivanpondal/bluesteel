@@ -266,4 +266,7 @@ extension BluetoothRadio: CBPeripheralDelegate {
         continuation.resume(returning: true)
     }
 
+    func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
+        print("update service \(peripheral)")
+    }
 }

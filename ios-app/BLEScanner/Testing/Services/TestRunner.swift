@@ -34,9 +34,6 @@ class TestRunner {
     func run() async {
         do {
             if (testCase.id == TestCaseId.SR_OW_1){
-                let mtu = try bluetoothRadio.mtu(forPeripheralId: device.id, withWriteType: .withResponse)
-                print("mtu \(mtu) bytes")
-
                 stopwatch.start()
                 let _ = try await bluetoothRadio.discover(fromPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID)
                 print("service discovery time \(stopwatch.stop()) ms")
@@ -44,6 +41,9 @@ class TestRunner {
                 stopwatch.start()
                 let _ = try await bluetoothRadio.discover(fromPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
                 print("characteristic discovery time \(stopwatch.stop()) ms")
+
+                let mtu = try bluetoothRadio.mtu(forPeripheralId: device.id, withWriteType: .withoutResponse)
+                print("mtu \(mtu) bytes")
 
                 for i in 0..<100 {
                     stopwatch.start()
@@ -57,7 +57,7 @@ class TestRunner {
                 state = "FINISHED"
             }
         } catch {
-            print("\(error)")
+            print("something went wrong: \(error)")
         }
     }
 }
