@@ -44,7 +44,7 @@ struct TestCaseListView: View {
                 }.fixedSize()
                 NavigationLink(destination: TestCaseView(activeTestCase: TestCase(
                     id: selectedTestCase, devices: connectedDevices.filter({selectedDevices[$0.id] == true})), bluetoothRadio: bluetoothRadio
-                ).navigationBarHidden(true)) {
+                )) {
                     Button("Run", action: {}).allowsHitTesting(false)
                 }
             }

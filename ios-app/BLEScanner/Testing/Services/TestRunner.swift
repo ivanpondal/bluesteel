@@ -14,7 +14,7 @@ class TestRunner {
     var stopwatch: Stopwatch
 
     @Published
-    var state: String = "RUNNING"
+    var state: String = "RUNNING 🏃‍♂️"
 
     init(bluetoothRadio: BluetoothRadio, testCase: TestCase, device: Device) {
         self.bluetoothRadio = bluetoothRadio
@@ -54,7 +54,7 @@ class TestRunner {
                     let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, data: data)
                     print("\(i)th write with response time \(stopwatch.stop()) ms")
                 }
-                state = "FINISHED"
+                state = "FINISHED ☑️"
             }
         } catch {
             print("something went wrong: \(error)")

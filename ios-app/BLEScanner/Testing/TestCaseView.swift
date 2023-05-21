@@ -14,13 +14,20 @@ struct TestCaseView: View {
     var activeTestCase: TestCase
     var bluetoothRadio: BluetoothRadio
     @State
-    var testRunnerState: String = "RUNNING 🏃‍♂️"
-
+    private var testRunnerState: String = "N/A"
     @State
-    private var cancellables = Set<AnyCancellable>()
+    private var cancellables: Set<AnyCancellable> = Set<AnyCancellable>()
+
+    private func runTest() async {
+        if (activeTestCase.devices.count > 0){
+            let testRunner = TestRunner(bluetoothRadio: bluetoothRadio, testCase: activeTestCase, device: activeTestCase.devices.first!)
+            testRunner.$state.sink(receiveValue: { testRunnerState = $0 }).store(in: &cancellables)
+            await testRunner.run()
+        }
+    }
 
     var body: some View {
-        VStack{
+        VStack {
             Text("Test case: \"\(activeTestCase.id.displayName())\"")
                 .font(.title)
                 .padding()
@@ -34,12 +41,13 @@ struct TestCaseView: View {
             }.listStyle(.grouped)
 
             Spacer()
-            Button("Stop", action: {})
-        }.task {
-            let testRunner = TestRunner(bluetoothRadio: bluetoothRadio, testCase: activeTestCase, device: activeTestCase.devices.first!)
-
-            testRunner.$state.sink(receiveValue: { testRunnerState = $0 }).store(in: &cancellables)
-            await testRunner.run()
+            Button("Restart", action: {
+                Task {
+                    await runTest()
+                }
+            }).disabled(testRunnerState == "RUNNING 🏃‍♂️")
+        }.navigationBarBackButtonHidden(testRunnerState != "FINISHED ☑️").task {
+            await runTest()
         }
     }
 }
