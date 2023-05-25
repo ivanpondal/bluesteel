@@ -13,8 +13,15 @@ class TestRunner {
     let device: Device
     var stopwatch: Stopwatch
 
+    private var totalBytesSent: Int = 0
+    private var totalTimeSendingInMs: Int64 = 0
+
     @Published
     var state: String = "RUNNING 🏃‍♂️"
+    @Published
+    var packetsSent: Int = 0
+    @Published
+    var bytesSentPerSecond: Float = 0
 
     init(bluetoothRadio: BluetoothRadio, testCase: TestCase, device: Device) {
         self.bluetoothRadio = bluetoothRadio
@@ -43,7 +50,9 @@ class TestRunner {
                 print("characteristic discovery time \(stopwatch.stop()) ms")
 
                 let mtu = try bluetoothRadio.mtu(forPeripheralId: device.id, withWriteType: .withoutResponse)
-                print("mtu \(mtu) bytes")
+                let mtuWithResponse = try bluetoothRadio.mtu(forPeripheralId: device.id, withWriteType: .withResponse)
+                print("mtu \(mtu) bytes without response")
+                print("mtu \(mtuWithResponse) bytes with response")
 
                 for i in 0..<100 {
                     stopwatch.start()
@@ -52,7 +61,13 @@ class TestRunner {
 
                     stopwatch.start()
                     let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, data: data)
-                    print("\(i)th write with response time \(stopwatch.stop()) ms")
+                    let sendTimeInMs = stopwatch.stop()
+                    totalTimeSendingInMs += sendTimeInMs
+                    totalBytesSent += data.count
+                    bytesSentPerSecond = Float(1000 * totalBytesSent)/Float(totalTimeSendingInMs)
+                    packetsSent += 1
+
+                    print("\(i)th write with response time \(sendTimeInMs) ms")
                 }
                 state = "FINISHED ☑️"
             }

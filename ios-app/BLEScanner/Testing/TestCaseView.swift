@@ -13,8 +13,13 @@ struct TestCaseView: View {
 
     var activeTestCase: TestCase
     var bluetoothRadio: BluetoothRadio
+
     @State
     private var testRunnerState: String = "N/A"
+    @State
+    private var testRunnerPacketsSent: Int = 0
+    @State
+    private var testRunnerBytesSentPerSec: Float = 0
     @State
     private var cancellables: Set<AnyCancellable> = Set<AnyCancellable>()
 
@@ -22,6 +27,14 @@ struct TestCaseView: View {
         if (activeTestCase.devices.count > 0){
             let testRunner = TestRunner(bluetoothRadio: bluetoothRadio, testCase: activeTestCase, device: activeTestCase.devices.first!)
             testRunner.$state.sink(receiveValue: { testRunnerState = $0 }).store(in: &cancellables)
+            testRunner.$packetsSent
+                .throttle(for: .seconds(0.5), scheduler: RunLoop.main, latest: true)
+                .sink(receiveValue: { testRunnerPacketsSent = $0 })
+                .store(in: &cancellables)
+            testRunner.$bytesSentPerSecond
+                .throttle(for: .seconds(0.5), scheduler: RunLoop.main, latest: true)
+                .sink(receiveValue: { testRunnerBytesSentPerSec = $0 })
+                .store(in: &cancellables)
             await testRunner.run()
         }
     }
@@ -33,11 +46,7 @@ struct TestCaseView: View {
                 .padding()
                 .frame(maxWidth: .infinity)
             List(activeTestCase.devices) { connectedDevice in
-                VStack {
-                    Text(connectedDevice.id.uuidString)
-                        .font(.subheadline).padding(4)
-                    Text("Current state: \(testRunnerState)")
-                }.padding().frame(maxWidth: .infinity)
+                TestCaseRunView(testDevice: connectedDevice, testRunnerState: testRunnerState, packetsSent: testRunnerPacketsSent, bytesPerSecond: testRunnerBytesSentPerSec)
             }.listStyle(.grouped)
 
             Spacer()
