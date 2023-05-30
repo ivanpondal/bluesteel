@@ -47,6 +47,7 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
     private val connectedGatts: MutableMap<String, BluetoothGatt> =
         mutableMapOf()
 
+    private var gattServer: BluetoothGattServer? = null
 
     val bluetoothEnabled = bluetoothAdapter.isEnabled
 
@@ -110,6 +111,7 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
             )
         }
 
+        @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
         override fun onCharacteristicWriteRequest(
             device: android.bluetooth.BluetoothDevice?,
             requestId: Int,
@@ -131,8 +133,13 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
 
             value?.let {
                 val message = String(value, StandardCharsets.UTF_8);
-                Log.d(TAG, "Received value from $device: $message")
+                Log.d(
+                    TAG,
+                    "Received value with offset $offset $responseNeeded from $device: $message"
+                )
             }
+
+            gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
         }
     }
 
@@ -142,7 +149,7 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
         // need to ensure that the property is writable and has the write permission
         val messageCharacteristic = BluetoothGattCharacteristic(
             CHARACTERISTIC_UUID,
-            BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE,
+            BluetoothGattCharacteristic.PROPERTY_WRITE or BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE,
             BluetoothGattCharacteristic.PERMISSION_WRITE
         )
         service.addCharacteristic(messageCharacteristic)
@@ -152,8 +159,8 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
 
     @RequiresPermission(allOf = ["android.permission.BLUETOOTH_ADVERTISE", "android.permission.BLUETOOTH_CONNECT"])
     fun startAdvertisement() {
-        val gattServer = bluetoothManager.openGattServer(getApplication(), gattServerCallback)
-        gattServer.addService(setupGattService())
+        gattServer = bluetoothManager.openGattServer(getApplication(), gattServerCallback)
+        gattServer?.addService(setupGattService())
 
         val advertiser = bluetoothAdapter.bluetoothLeAdvertiser
 
@@ -217,8 +224,9 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
                             BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
                         )
                     } else {
-                        characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-                        characteristic.value= message
+                        characteristic.writeType =
+                            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+                        characteristic.value = message
                         gatt.writeCharacteristic(characteristic)
                     }
                 }

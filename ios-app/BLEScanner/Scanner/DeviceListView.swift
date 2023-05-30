@@ -10,8 +10,7 @@ import Combine
 
 struct DeviceListView: View {
     
-    var bluetoothRadio: BluetoothRadio = BluetoothRadio()
-    
+    var bluetoothRadio: BluetoothRadio
     @State var bluetoothState: String = "Loading"
     @State var devices: [Device] = []
     
@@ -56,7 +55,6 @@ struct DeviceListView: View {
             .map({ peripheralWithSignal -> Device in
                 var advertisedServices: [UUID] = []
                 let uuidAdvertisements = peripheralWithSignal.advertisements[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] ?? []
-                let uuidHashedAdvertisements = peripheralWithSignal.advertisements[CBAdvertisementDataOverflowServiceUUIDsKey] as? [CBUUID] ?? []
                 
                 for uuidAdvertisement in uuidAdvertisements {
                     if let uuid = UUID(uuidString: uuidAdvertisement.uuidString) {
@@ -83,6 +81,6 @@ struct DeviceListView: View {
 
 struct DeviceListView_Previews: PreviewProvider {
     static var previews: some View {
-        DeviceListView(devices: Device.sampleData)
+        DeviceListView(bluetoothRadio: BluetoothRadio(), devices: Device.sampleData)
     }
 }
