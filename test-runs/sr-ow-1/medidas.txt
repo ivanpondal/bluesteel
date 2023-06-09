@@ -1,0 +1,13 @@
+1 paso = 77,5 cm
+
+878px = 111.48m
+0.127
+
+4 pasos = 3.1
+8 pasos = 6.2
+16 pasos = 12.4
+32 pasos = 24.8
+48 pasos = 37.2
+64 pasos = 49.6
+80 pasos = 62
+final cuadra (96 pasos) = 78
