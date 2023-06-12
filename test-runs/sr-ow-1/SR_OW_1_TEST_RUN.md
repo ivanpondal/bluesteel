@@ -39,3 +39,9 @@ cat src-<SRC_DEVICE_ID>/dst_<DST_DEVICE_ID>_XX | grep write | cut -d' ' -f8
 | 24.8         | 57  | 58  | 58     | 88   | 230 | 7590 | 75.9   | 33.4188 | 3.34188  | 1116.82  |
 | 49.6         | 57  | 58  | 88     | 148  | 269 | 10935| 109.35 | 53.5317 | 5.35317  | 2865.64  |
 | 78           | 57  | 88  | 148    | 208  | 754 | 16078| 160.78 | 99.5552 | 9.95552  | 9911.24  |
+
+## Conclusions
+
+I was able to reach up to 78 meters before losing connection. During these runs,
+speed was approximately 2kbytes/sec, this only lowered to 1kbyte/sec when at
+maximum range.
