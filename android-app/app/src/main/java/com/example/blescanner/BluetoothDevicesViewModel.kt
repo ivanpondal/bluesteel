@@ -1,25 +1,19 @@
 package com.example.blescanner
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Application
 import android.bluetooth.*
-import android.bluetooth.le.AdvertiseCallback
-import android.bluetooth.le.AdvertiseData
-import android.bluetooth.le.AdvertiseSettings
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanResult
+import android.bluetooth.le.*
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
-import androidx.core.app.ActivityCompat
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.blescanner.model.BluetoothDevice
 import kotlinx.coroutines.flow.*
-import java.nio.charset.Charset
+import kotlinx.coroutines.launch
 import java.nio.charset.StandardCharsets
 import java.util.*
 
@@ -46,6 +40,9 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
 
     private val connectedGatts: MutableMap<String, BluetoothGatt> =
         mutableMapOf()
+
+    private val _deviceConnectionEvent: MutableSharedFlow<BluetoothGatt> = MutableSharedFlow()
+    val deviceConnectionEvent: SharedFlow<BluetoothGatt> = _deviceConnectionEvent
 
     private var gattServer: BluetoothGattServer? = null
 
@@ -74,7 +71,11 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
 
     @RequiresPermission(value = "android.permission.BLUETOOTH_SCAN")
     fun startScan() {
-        bluetoothAdapter.bluetoothLeScanner.startScan(scanCallback)
+        bluetoothAdapter.bluetoothLeScanner.startScan(
+            listOf(ScanFilter.Builder().setServiceUuid(ParcelUuid(SERVICE_UUID)).build()),
+            ScanSettings.Builder().build(),
+            scanCallback
+        )
     }
 
     @RequiresPermission(value = "android.permission.BLUETOOTH_SCAN")
@@ -201,11 +202,17 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
 
             if (gattStatus == "success" && state == "connected" && gatt !== null) {
                 connectedGatts[gatt.device.address] = gatt
-                gatt.discoverServices()
+                viewModelScope.launch {
+                    _deviceConnectionEvent.emit(gatt)
+                }
+//                Will do discovery on a separate method included when testing
+//                gatt.discoverServices()
             } else {
                 gatt?.close()
             }
         }
+
+
 
         @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
