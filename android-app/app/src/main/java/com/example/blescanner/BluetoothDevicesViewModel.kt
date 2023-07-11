@@ -1,6 +1,5 @@
 package com.example.blescanner
 
-import android.annotation.SuppressLint
 import android.app.Application
 import android.bluetooth.*
 import android.bluetooth.le.*
@@ -23,9 +22,6 @@ private val CHARACTERISTIC_UUID = UUID.fromString("A5C46D55-280D-4B9E-8335-BCA4C
 
 class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(application) {
 
-
-    private val scannedDevices: MutableSet<BluetoothDevice> = mutableSetOf()
-
     private val _bluetoothDevices: MutableStateFlow<List<BluetoothDevice>> =
         MutableStateFlow(emptyList())
     val bluetoothDevices: Flow<List<BluetoothDevice>> = _bluetoothDevices.debounce(1000)
@@ -47,41 +43,6 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
     private var gattServer: BluetoothGattServer? = null
 
     val bluetoothEnabled = bluetoothAdapter.isEnabled
-
-    private val scanCallback = object : ScanCallback() {
-        // Permission should have been asked in main activity
-        @SuppressLint("MissingPermission")
-        override fun onScanResult(callbackType: Int, result: ScanResult) {
-            val scannedDevice = BluetoothDevice(
-                id = result.device.address,
-                rssi = result.rssi,
-                name = result.device.name,
-                advertisements = result.scanRecord?.serviceUuids ?: emptyList()
-            )
-            scannedDevices.remove(scannedDevice)
-            scannedDevices.add(scannedDevice)
-
-            _bluetoothDevices.update { scannedDevices.toList().sortedByDescending { it.rssi } }
-        }
-
-        override fun onScanFailed(errorCode: Int) {
-            Log.e(TAG, "onScanFailed: code $errorCode")
-        }
-    }
-
-    @RequiresPermission(value = "android.permission.BLUETOOTH_SCAN")
-    fun startScan() {
-        bluetoothAdapter.bluetoothLeScanner.startScan(
-            listOf(ScanFilter.Builder().setServiceUuid(ParcelUuid(SERVICE_UUID)).build()),
-            ScanSettings.Builder().build(),
-            scanCallback
-        )
-    }
-
-    @RequiresPermission(value = "android.permission.BLUETOOTH_SCAN")
-    fun stopScan() {
-        bluetoothAdapter.bluetoothLeScanner.stopScan(scanCallback)
-    }
 
     private val advertisementCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
@@ -211,8 +172,6 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
                 gatt?.close()
             }
         }
-
-
 
         @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {

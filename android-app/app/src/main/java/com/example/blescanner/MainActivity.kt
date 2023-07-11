@@ -2,6 +2,8 @@ package com.example.blescanner
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -24,7 +26,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.blescanner.devicedetail.DeviceDetail
+import com.example.blescanner.scanner.BluetoothScanner
 import com.example.blescanner.scanner.DeviceList
+import com.example.blescanner.scanner.DeviceListViewModel
 import com.example.blescanner.ui.theme.BLEScannerTheme
 import kotlinx.coroutines.launch
 
@@ -34,6 +38,9 @@ const val TAG = "MainActivity"
 class MainActivity : ComponentActivity() {
 
     private val bleViewModel: BluetoothDevicesViewModel by viewModels()
+    private val bluetoothScanner: BluetoothScanner by lazy {
+        BluetoothScanner(bluetoothManager = application.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager)
+    }
 
     private val turnOnBluetooth =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -75,8 +82,15 @@ class MainActivity : ComponentActivity() {
 
                     NavHost(navController = navController, startDestination = "scanner") {
                         composable("scanner") {
+                            val deviceListViewModel: DeviceListViewModel by viewModels {
+                                DeviceListViewModel.provideFactory(
+                                    bluetoothScanner
+                                )
+                            }
                             DeviceList(
-                                devices = bluetoothDevices.value,
+                                devices = deviceListViewModel.scannedDevicesFlow.collectAsState(
+                                    emptyList()
+                                ).value,
                                 onNavigateToDevice = { deviceId ->
                                     navController.navigate(
                                         "device/$deviceId"
@@ -96,7 +110,7 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     requestLocationPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
                                 } else {
-                                    bleViewModel.stopScan()
+//                                    bleViewModel.stopScan()
                                     bleViewModel.connectGatt(id)
                                 }
                             })
@@ -129,7 +143,7 @@ class MainActivity : ComponentActivity() {
                 return
             }
             Log.d(TAG, "Start scanning")
-            bleViewModel.startScan()
+            bluetoothScanner.startScan()
             bleViewModel.startAdvertisement()
         }
     }
