@@ -49,6 +49,7 @@ struct TestCaseListView: View {
                 }
             }
         }
+        // Use connection/disconnection events to make it easier to keep track of selected devices
         .onReceive(bluetoothRadio.connectionEventSubject
             .receive(on: RunLoop.main)
             .map({ peripheral in
@@ -57,10 +58,11 @@ struct TestCaseListView: View {
                 connectedDevices.append($0)
                 selectedDevices[$0.id] = false
             }
-            .onReceive(bluetoothRadio.disconnectionEventSubject.receive(on: RunLoop.main)){ device in
-                connectedDevices.removeAll(where: {$0.id == device.identifier})
-                selectedDevices.removeValue(forKey: device.identifier)
-            }
+            .onReceive(bluetoothRadio.disconnectionEventSubject
+                .receive(on: RunLoop.main)){ device in
+                    connectedDevices.removeAll(where: {$0.id == device.identifier})
+                    selectedDevices.removeValue(forKey: device.identifier)
+                }
     }
 }
 

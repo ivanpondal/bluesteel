@@ -1,25 +1,17 @@
 package com.example.blescanner
 
-import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Application
 import android.bluetooth.*
-import android.bluetooth.le.AdvertiseCallback
-import android.bluetooth.le.AdvertiseData
-import android.bluetooth.le.AdvertiseSettings
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanResult
+import android.bluetooth.le.*
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
-import androidx.core.app.ActivityCompat
 import androidx.lifecycle.AndroidViewModel
-import com.example.blescanner.model.BluetoothDevice
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
-import java.nio.charset.Charset
+import kotlinx.coroutines.launch
 import java.nio.charset.StandardCharsets
 import java.util.*
 
@@ -28,14 +20,6 @@ private val SERVICE_UUID = UUID.fromString("FE4B1073-17BB-4982-955F-28702F277F19
 private val CHARACTERISTIC_UUID = UUID.fromString("A5C46D55-280D-4B9E-8335-BCA4C0977BDB")
 
 class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(application) {
-
-
-    private val scannedDevices: MutableSet<BluetoothDevice> = mutableSetOf()
-
-    private val _bluetoothDevices: MutableStateFlow<List<BluetoothDevice>> =
-        MutableStateFlow(emptyList())
-    val bluetoothDevices: Flow<List<BluetoothDevice>> = _bluetoothDevices.debounce(1000)
-
     private val bluetoothManager: BluetoothManager by lazy {
         application.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     }
@@ -47,40 +31,12 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
     private val connectedGatts: MutableMap<String, BluetoothGatt> =
         mutableMapOf()
 
+    private val _deviceConnectionEvent: MutableSharedFlow<BluetoothGatt> = MutableSharedFlow()
+    val deviceConnectionEvent: SharedFlow<BluetoothGatt> = _deviceConnectionEvent
+
     private var gattServer: BluetoothGattServer? = null
 
     val bluetoothEnabled = bluetoothAdapter.isEnabled
-
-    private val scanCallback = object : ScanCallback() {
-        // Permission should have been asked in main activity
-        @SuppressLint("MissingPermission")
-        override fun onScanResult(callbackType: Int, result: ScanResult) {
-            val scannedDevice = BluetoothDevice(
-                id = result.device.address,
-                rssi = result.rssi,
-                name = result.device.name,
-                advertisements = result.scanRecord?.serviceUuids ?: emptyList()
-            )
-            scannedDevices.remove(scannedDevice)
-            scannedDevices.add(scannedDevice)
-
-            _bluetoothDevices.update { scannedDevices.toList().sortedByDescending { it.rssi } }
-        }
-
-        override fun onScanFailed(errorCode: Int) {
-            Log.e(TAG, "onScanFailed: code $errorCode")
-        }
-    }
-
-    @RequiresPermission(value = "android.permission.BLUETOOTH_SCAN")
-    fun startScan() {
-        bluetoothAdapter.bluetoothLeScanner.startScan(scanCallback)
-    }
-
-    @RequiresPermission(value = "android.permission.BLUETOOTH_SCAN")
-    fun stopScan() {
-        bluetoothAdapter.bluetoothLeScanner.stopScan(scanCallback)
-    }
 
     private val advertisementCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
@@ -201,7 +157,11 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
 
             if (gattStatus == "success" && state == "connected" && gatt !== null) {
                 connectedGatts[gatt.device.address] = gatt
-                gatt.discoverServices()
+                viewModelScope.launch {
+                    _deviceConnectionEvent.emit(gatt)
+                }
+//                Will do discovery on a separate method included when testing
+//                gatt.discoverServices()
             } else {
                 gatt?.close()
             }
