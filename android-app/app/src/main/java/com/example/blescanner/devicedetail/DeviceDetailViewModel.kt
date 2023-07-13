@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.stateIn
 class DeviceDetailViewModel(private val scannedDeviceRepository: ScannedDeviceRepository) :
     ViewModel() {
     fun getScannedDeviceById(id: String): StateFlow<BluetoothScannedDevice> {
-        return scannedDeviceRepository.scannedDeviceByIdStream(id).stateIn(
+        return scannedDeviceRepository.streamById(id).stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(),
             scannedDeviceRepository.findById(id)

@@ -38,11 +38,11 @@ class ScannedDeviceRepository(
         }
     }
 
-    fun scannedDevicesStream(): StateFlow<List<BluetoothScannedDevice>> {
+    fun streamAll(): StateFlow<List<BluetoothScannedDevice>> {
         return scannedDevicesStream.asStateFlow()
     }
 
-    fun scannedDeviceByIdStream(id: String): Flow<BluetoothScannedDevice> {
+    fun streamById(id: String): Flow<BluetoothScannedDevice> {
         return scannedDevicesStream.map { devices -> devices.first { it.id == id } }
     }
 

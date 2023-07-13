@@ -7,8 +7,7 @@ import kotlinx.coroutines.FlowPreview
 
 @OptIn(FlowPreview::class)
 class DeviceListViewModel(private val scannedDeviceRepository: ScannedDeviceRepository) : ViewModel() {
-
-    val scannedDevices = scannedDeviceRepository.scannedDevicesStream()
+    val scannedDevices = scannedDeviceRepository.streamAll()
 
     companion object {
         fun provideFactory(
