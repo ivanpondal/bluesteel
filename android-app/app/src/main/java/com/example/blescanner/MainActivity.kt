@@ -86,13 +86,9 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
                 ) {
                     val navController = rememberNavController()
-                    val bluetoothDevices = bleViewModel.bluetoothDevices.collectAsState(
-                        emptyList()
-                    )
 
                     NavHost(navController = navController, startDestination = "scanner") {
                         composable("scanner") {
-
                             val deviceListViewModel: DeviceListViewModel by viewModels {
                                 DeviceListViewModel.provideFactory(
                                     scannedDeviceRepository
