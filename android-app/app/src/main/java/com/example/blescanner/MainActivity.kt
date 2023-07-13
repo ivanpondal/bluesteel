@@ -3,7 +3,6 @@ package com.example.blescanner
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -26,10 +25,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.blescanner.devicedetail.DeviceDetail
-import com.example.blescanner.scanner.BluetoothScanner
 import com.example.blescanner.scanner.DeviceList
 import com.example.blescanner.scanner.DeviceListViewModel
+import com.example.blescanner.scanner.repository.ScannedDeviceRepository
+import com.example.blescanner.scanner.service.BluetoothScanner
 import com.example.blescanner.ui.theme.BLEScannerTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 const val REQUEST_ENABLE_BT: Int = 1
@@ -39,7 +41,10 @@ class MainActivity : ComponentActivity() {
 
     private val bleViewModel: BluetoothDevicesViewModel by viewModels()
     private val bluetoothScanner: BluetoothScanner by lazy {
-        BluetoothScanner(bluetoothManager = application.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager)
+        BluetoothScanner(bluetoothManager = application.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager)
+    }
+    private val scannedDeviceRepository: ScannedDeviceRepository by lazy {
+        ScannedDeviceRepository(bluetoothScanner, CoroutineScope(Dispatchers.IO))
     }
 
     private val turnOnBluetooth =
@@ -63,7 +68,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
         lifecycleScope.launch {
             bleViewModel.deviceConnectionEvent.flowWithLifecycle(
                 lifecycle = lifecycle,
@@ -82,13 +86,14 @@ class MainActivity : ComponentActivity() {
 
                     NavHost(navController = navController, startDestination = "scanner") {
                         composable("scanner") {
+
                             val deviceListViewModel: DeviceListViewModel by viewModels {
                                 DeviceListViewModel.provideFactory(
-                                    bluetoothScanner
+                                    scannedDeviceRepository
                                 )
                             }
                             DeviceList(
-                                devices = deviceListViewModel.scannedDevicesFlow.collectAsState(
+                                devices = deviceListViewModel.scannedDevices.collectAsState(
                                     emptyList()
                                 ).value,
                                 onNavigateToDevice = { deviceId ->
@@ -110,7 +115,7 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     requestLocationPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
                                 } else {
-//                                    bleViewModel.stopScan()
+                                    bluetoothScanner.stopScan()
                                     bleViewModel.connectGatt(id)
                                 }
                             })
@@ -119,6 +124,19 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_SCAN
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.d(TAG, "No tiene permiso de bluetooth scan")
+            return
+        }
+        bluetoothScanner.stopScan()
     }
 
     override fun onResume() {

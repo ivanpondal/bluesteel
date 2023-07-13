@@ -18,12 +18,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.blescanner.model.BluetoothDevice
+import com.example.blescanner.model.BluetoothScannedDevice
 import com.example.blescanner.model.BluetoothDeviceData
 import com.example.blescanner.ui.theme.BLEScannerTheme
 
 @Composable
-fun DeviceDetail(device: BluetoothDevice, onConnect: (deviceId: String) -> Unit) {
+fun DeviceDetail(device: BluetoothScannedDevice, onConnect: (deviceId: String) -> Unit) {
     Column {
         Column(
             Modifier

@@ -1,9 +1,10 @@
 package com.example.blescanner.model
 
 import android.os.ParcelUuid
-import java.util.*
+import java.util.Objects
+import java.util.UUID
 
-data class BluetoothDevice(
+data class BluetoothScannedDevice(
     val id: String,
     val rssi: Int,
     val name: String? = null,
@@ -11,7 +12,7 @@ data class BluetoothDevice(
 ) {
     override fun equals(other: Any?): Boolean {
         if (other === this) return true
-        if (other !is BluetoothDevice) return false
+        if (other !is BluetoothScannedDevice) return false
         return id == other.id
     }
 
@@ -22,13 +23,13 @@ data class BluetoothDevice(
 
 object BluetoothDeviceData {
     val sampleDevices = listOf(
-        BluetoothDevice(
+        BluetoothScannedDevice(
             id = "AD42A639-E566-46E7-B93B-13B87F29649B",
             rssi = -30,
             name = "JBL speaker",
             advertisements = emptyList()
         ),
-        BluetoothDevice(
+        BluetoothScannedDevice(
             id = "7DA43699-7332-4343-A046-E6B139745102",
             rssi = -79,
             advertisements = listOf(ParcelUuid(UUID.randomUUID()))

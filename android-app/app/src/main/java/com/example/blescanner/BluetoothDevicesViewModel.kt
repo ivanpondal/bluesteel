@@ -10,7 +10,7 @@ import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.blescanner.model.BluetoothDevice
+import com.example.blescanner.model.BluetoothScannedDevice
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.nio.charset.StandardCharsets
@@ -22,9 +22,9 @@ private val CHARACTERISTIC_UUID = UUID.fromString("A5C46D55-280D-4B9E-8335-BCA4C
 
 class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val _bluetoothDevices: MutableStateFlow<List<BluetoothDevice>> =
+    private val _bluetoothDevices: MutableStateFlow<List<BluetoothScannedDevice>> =
         MutableStateFlow(emptyList())
-    val bluetoothDevices: Flow<List<BluetoothDevice>> = _bluetoothDevices.debounce(1000)
+    val bluetoothDevices: Flow<List<BluetoothScannedDevice>> = _bluetoothDevices.debounce(1000)
 
     private val bluetoothManager: BluetoothManager by lazy {
         application.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
