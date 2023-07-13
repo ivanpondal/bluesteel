@@ -11,13 +11,18 @@ import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.example.blescanner.model.BluetoothScannedDevice
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 private val SERVICE_UUID = UUID.fromString("FE4B1073-17BB-4982-955F-28702F277F19")
 
-class BluetoothScanner(private val bluetoothManager: BluetoothManager){
+class BluetoothScanner(
+    private val bluetoothManager: BluetoothManager,
+    private val coroutineScope: CoroutineScope
+) {
     // Add extra buffer capacity because default is 0 and tryEmit fails to emit
     private val _scannedDeviceEvent: MutableSharedFlow<BluetoothScannedDevice> =
         MutableSharedFlow(extraBufferCapacity = 10)
@@ -38,7 +43,9 @@ class BluetoothScanner(private val bluetoothManager: BluetoothManager){
                 advertisements = result.scanRecord?.serviceUuids ?: emptyList()
             )
 
-            _scannedDeviceEvent.tryEmit(scannedDevice)
+            coroutineScope.launch {
+                _scannedDeviceEvent.emit(scannedDevice)
+            }
         }
 
         override fun onScanFailed(errorCode: Int) {

@@ -25,6 +25,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.blescanner.devicedetail.DeviceDetail
+import com.example.blescanner.devicedetail.DeviceDetailViewModel
 import com.example.blescanner.scanner.DeviceList
 import com.example.blescanner.scanner.DeviceListViewModel
 import com.example.blescanner.scanner.repository.ScannedDeviceRepository
@@ -39,12 +40,17 @@ const val TAG = "MainActivity"
 
 class MainActivity : ComponentActivity() {
 
+    private val activityCoroutineScope = CoroutineScope(Dispatchers.IO)
+
     private val bleViewModel: BluetoothDevicesViewModel by viewModels()
     private val bluetoothScanner: BluetoothScanner by lazy {
-        BluetoothScanner(bluetoothManager = application.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager)
+        BluetoothScanner(
+            bluetoothManager = application.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager,
+            activityCoroutineScope
+        )
     }
     private val scannedDeviceRepository: ScannedDeviceRepository by lazy {
-        ScannedDeviceRepository(bluetoothScanner, CoroutineScope(Dispatchers.IO))
+        ScannedDeviceRepository(bluetoothScanner, activityCoroutineScope)
     }
 
     private val turnOnBluetooth =
@@ -103,10 +109,15 @@ class MainActivity : ComponentActivity() {
                                 })
                         }
                         composable("device/{deviceId}") { backStackEntry ->
+                            val deviceDetailViewModel: DeviceDetailViewModel by viewModels {
+                                DeviceDetailViewModel.provideFactory(
+                                    scannedDeviceRepository
+                                )
+                            }
                             val deviceId =
                                 backStackEntry.arguments?.getString("deviceId") ?: "no id :("
-                            val device =
-                                bluetoothDevices.value.first { it.id == deviceId }
+                            val device = deviceDetailViewModel.getScannedDeviceById(deviceId)
+                                .collectAsState().value
                             DeviceDetail(device = device, onConnect = { id ->
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
                                         applicationContext,

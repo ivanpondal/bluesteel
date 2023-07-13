@@ -1,7 +1,6 @@
 package com.example.blescanner.model
 
 import android.os.ParcelUuid
-import java.util.Objects
 import java.util.UUID
 
 data class BluetoothScannedDevice(
@@ -10,15 +9,6 @@ data class BluetoothScannedDevice(
     val name: String? = null,
     val advertisements: List<ParcelUuid>
 ) {
-    override fun equals(other: Any?): Boolean {
-        if (other === this) return true
-        if (other !is BluetoothScannedDevice) return false
-        return id == other.id
-    }
-
-    override fun hashCode(): Int {
-        return Objects.hash(id)
-    }
 }
 
 object BluetoothDeviceData {
