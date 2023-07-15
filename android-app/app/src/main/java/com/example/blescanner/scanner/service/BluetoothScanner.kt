@@ -11,13 +11,12 @@ import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.example.blescanner.model.BluetoothScannedDevice
+import com.example.blescanner.scanner.service.BluetoothConstants.SERVICE_UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
-
-private val SERVICE_UUID = UUID.fromString("FE4B1073-17BB-4982-955F-28702F277F19")
 
 class BluetoothScanner(
     private val bluetoothManager: BluetoothManager,

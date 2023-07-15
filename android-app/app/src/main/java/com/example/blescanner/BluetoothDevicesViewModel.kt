@@ -9,9 +9,7 @@ import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import java.nio.charset.StandardCharsets
 import java.util.*
 
@@ -27,9 +25,6 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
     private val bluetoothAdapter: BluetoothAdapter by lazy {
         bluetoothManager.adapter
     }
-
-    private val connectedGatts: MutableMap<String, BluetoothGatt> =
-        mutableMapOf()
 
     private val _deviceConnectionEvent: MutableSharedFlow<BluetoothGatt> = MutableSharedFlow()
     val deviceConnectionEvent: SharedFlow<BluetoothGatt> = _deviceConnectionEvent
@@ -132,42 +127,6 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
 
     private val gattClientCallback = object : BluetoothGattCallback() {
         @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
-        override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
-            super.onConnectionStateChange(gatt, status, newState)
-
-            val gattStatus = if (BluetoothGatt.GATT_SUCCESS == status) {
-                "success"
-            } else if (BluetoothGatt.GATT_FAILURE == status) {
-                "failure"
-            } else {
-                "unknown $status"
-            }
-
-            val state = if (BluetoothGatt.STATE_CONNECTED == newState) {
-                "connected"
-            } else if (BluetoothGatt.STATE_CONNECTING == newState) {
-                "connecting"
-            } else if (BluetoothGatt.STATE_DISCONNECTED == newState) {
-                "disconnected"
-            } else {
-                "unknown $newState"
-            }
-
-            Log.d(TAG, "connection state change, status: $gattStatus, state: $state")
-
-            if (gattStatus == "success" && state == "connected" && gatt !== null) {
-                connectedGatts[gatt.device.address] = gatt
-                viewModelScope.launch {
-                    _deviceConnectionEvent.emit(gatt)
-                }
-//                Will do discovery on a separate method included when testing
-//                gatt.discoverServices()
-            } else {
-                gatt?.close()
-            }
-        }
-
-        @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             super.onServicesDiscovered(gatt, status)
 
@@ -193,21 +152,6 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
             } else {
                 Log.d(TAG, "discovery failed with status $status")
             }
-        }
-    }
-
-    @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
-    fun connectGatt(id: String) {
-        val bluetoothDevice = bluetoothAdapter.getRemoteDevice(id)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            bluetoothDevice.connectGatt(
-                getApplication(),
-                false,
-                gattClientCallback,
-                android.bluetooth.BluetoothDevice.TRANSPORT_LE
-            )
-        } else {
-            bluetoothDevice.connectGatt(getApplication(), false, gattClientCallback)
         }
     }
 }

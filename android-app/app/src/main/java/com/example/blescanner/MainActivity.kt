@@ -28,7 +28,9 @@ import com.example.blescanner.devicedetail.DeviceDetail
 import com.example.blescanner.devicedetail.DeviceDetailViewModel
 import com.example.blescanner.scanner.DeviceList
 import com.example.blescanner.scanner.DeviceListViewModel
+import com.example.blescanner.scanner.repository.ConnectedDeviceRepository
 import com.example.blescanner.scanner.repository.ScannedDeviceRepository
+import com.example.blescanner.scanner.service.BluetoothClientService
 import com.example.blescanner.scanner.service.BluetoothScanner
 import com.example.blescanner.ui.theme.BLEScannerTheme
 import kotlinx.coroutines.CoroutineScope
@@ -43,14 +45,25 @@ class MainActivity : ComponentActivity() {
     private val activityCoroutineScope = CoroutineScope(Dispatchers.IO)
 
     private val bleViewModel: BluetoothDevicesViewModel by viewModels()
+    private val bluetoothManager: BluetoothManager by lazy {
+        application.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
+    }
     private val bluetoothScanner: BluetoothScanner by lazy {
         BluetoothScanner(
-            bluetoothManager = application.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager,
+            bluetoothManager,
             activityCoroutineScope
         )
     }
+    private val bluetoothClientService: BluetoothClientService by lazy{
+        BluetoothClientService(bluetoothManager, activityCoroutineScope, this)
+    }
+
     private val scannedDeviceRepository: ScannedDeviceRepository by lazy {
         ScannedDeviceRepository(bluetoothScanner, activityCoroutineScope)
+    }
+
+    private val connectedDeviceRepository: ConnectedDeviceRepository by lazy {
+        ConnectedDeviceRepository(bluetoothClientService, activityCoroutineScope)
     }
 
     private val turnOnBluetooth =
@@ -110,6 +123,7 @@ class MainActivity : ComponentActivity() {
                                     scannedDeviceRepository
                                 )
                             }
+                            Log.d(TAG,"${connectedDeviceRepository.streamAll().collectAsState().value}")
                             val deviceId =
                                 backStackEntry.arguments?.getString("deviceId") ?: "no id :("
                             val device = deviceDetailViewModel.getScannedDeviceById(deviceId)
@@ -123,7 +137,7 @@ class MainActivity : ComponentActivity() {
                                     requestLocationPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
                                 } else {
                                     bluetoothScanner.stopScan()
-                                    bleViewModel.connectGatt(id)
+                                    bluetoothClientService.connect(id)
                                 }
                             })
                         }
