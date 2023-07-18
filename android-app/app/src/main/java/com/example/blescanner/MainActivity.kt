@@ -24,13 +24,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.blescanner.devicedetail.DeviceDetail
 import com.example.blescanner.devicedetail.DeviceDetailViewModel
@@ -110,6 +114,14 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
                     Scaffold(bottomBar = {
+                        val navBackStackEntry by navController.currentBackStackEntryAsState()
+                        val currentDestination = navBackStackEntry?.destination
+                        Log.d(
+                            TAG,
+                            "current dest ${
+                                currentDestination?.hierarchy?.map { it.route }?.toList()
+                            }"
+                        )
                         BottomNavigation {
                             BottomNavigationItem(
                                 icon = {
@@ -118,8 +130,23 @@ class MainActivity : ComponentActivity() {
                                         contentDescription = "scanner"
                                     )
                                 },
-                                selected = true,
-                                onClick = { /*TODO*/ })
+                                selected = currentDestination?.hierarchy?.any { it.route == "scanner" || it.route == "devices/{deviceId}" }
+                                    ?: false,
+                                onClick = {
+                                    navController.navigate("scanner") {
+                                        // Pop up to the start destination of the graph to
+                                        // avoid building up a large stack of destinations
+                                        // on the back stack as users select items
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        // Avoid multiple copies of the same destination when
+                                        // reselecting the same item
+                                        launchSingleTop = true
+                                        // Restore state when reselecting a previously selected item
+                                        restoreState = true
+                                    }
+                                })
                             BottomNavigationItem(
                                 icon = {
                                     Icon(
@@ -127,8 +154,17 @@ class MainActivity : ComponentActivity() {
                                         contentDescription = "test cases"
                                     )
                                 },
-                                selected = true,
-                                onClick = { /*TODO*/ })
+                                selected = currentDestination?.hierarchy?.any { it.route == "testrunner" }
+                                    ?: false,
+                                onClick = {
+                                    navController.navigate("testrunner") {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                })
                         }
                     }) { innerPadding ->
                         NavHost(
@@ -148,11 +184,11 @@ class MainActivity : ComponentActivity() {
                                     ).value,
                                     onNavigateToDevice = { deviceId ->
                                         navController.navigate(
-                                            "device/$deviceId"
+                                            "devices/$deviceId"
                                         )
                                     })
                             }
-                            composable("device/{deviceId}") { backStackEntry ->
+                            composable("devices/{deviceId}") { backStackEntry ->
                                 val deviceDetailViewModel: DeviceDetailViewModel by viewModels {
                                     DeviceDetailViewModel.provideFactory(
                                         scannedDeviceRepository
