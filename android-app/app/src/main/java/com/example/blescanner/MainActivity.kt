@@ -13,8 +13,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.BottomNavigation
+import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Scaffold
 import androidx.compose.material.Surface
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
@@ -32,6 +40,8 @@ import com.example.blescanner.scanner.repository.ConnectedDeviceRepository
 import com.example.blescanner.scanner.repository.ScannedDeviceRepository
 import com.example.blescanner.scanner.service.BluetoothClientService
 import com.example.blescanner.scanner.service.BluetoothScanner
+import com.example.blescanner.testrunner.TestCaseList
+import com.example.blescanner.testrunner.TestCaseListViewModel
 import com.example.blescanner.ui.theme.BLEScannerTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,7 +64,7 @@ class MainActivity : ComponentActivity() {
             activityCoroutineScope
         )
     }
-    private val bluetoothClientService: BluetoothClientService by lazy{
+    private val bluetoothClientService: BluetoothClientService by lazy {
         BluetoothClientService(bluetoothManager, activityCoroutineScope, this)
     }
 
@@ -99,47 +109,87 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
                 ) {
                     val navController = rememberNavController()
-
-                    NavHost(navController = navController, startDestination = "scanner") {
-                        composable("scanner") {
-                            val deviceListViewModel: DeviceListViewModel by viewModels {
-                                DeviceListViewModel.provideFactory(
-                                    scannedDeviceRepository
-                                )
-                            }
-                            DeviceList(
-                                devices = deviceListViewModel.scannedDevices.collectAsState(
-                                    emptyList()
-                                ).value,
-                                onNavigateToDevice = { deviceId ->
-                                    navController.navigate(
-                                        "device/$deviceId"
+                    Scaffold(bottomBar = {
+                        BottomNavigation {
+                            BottomNavigationItem(
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.Filled.Search,
+                                        contentDescription = "scanner"
                                     )
-                                })
+                                },
+                                selected = true,
+                                onClick = { /*TODO*/ })
+                            BottomNavigationItem(
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.Filled.List,
+                                        contentDescription = "test cases"
+                                    )
+                                },
+                                selected = true,
+                                onClick = { /*TODO*/ })
                         }
-                        composable("device/{deviceId}") { backStackEntry ->
-                            val deviceDetailViewModel: DeviceDetailViewModel by viewModels {
-                                DeviceDetailViewModel.provideFactory(
-                                    scannedDeviceRepository
-                                )
-                            }
-                            Log.d(TAG,"${connectedDeviceRepository.streamAll().collectAsState().value}")
-                            val deviceId =
-                                backStackEntry.arguments?.getString("deviceId") ?: "no id :("
-                            val device = deviceDetailViewModel.getScannedDeviceById(deviceId)
-                                .collectAsState().value
-                            DeviceDetail(device = device, onConnect = { id ->
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
-                                        applicationContext,
-                                        Manifest.permission.BLUETOOTH_CONNECT
-                                    ) != PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    requestLocationPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
-                                } else {
-                                    bluetoothScanner.stopScan()
-                                    bluetoothClientService.connect(id)
+                    }) { innerPadding ->
+                        NavHost(
+                            navController = navController,
+                            startDestination = "scanner",
+                            modifier = Modifier.padding(innerPadding)
+                        ) {
+                            composable("scanner") {
+                                val deviceListViewModel: DeviceListViewModel by viewModels {
+                                    DeviceListViewModel.provideFactory(
+                                        scannedDeviceRepository
+                                    )
                                 }
-                            })
+                                DeviceList(
+                                    devices = deviceListViewModel.scannedDevices.collectAsState(
+                                        emptyList()
+                                    ).value,
+                                    onNavigateToDevice = { deviceId ->
+                                        navController.navigate(
+                                            "device/$deviceId"
+                                        )
+                                    })
+                            }
+                            composable("device/{deviceId}") { backStackEntry ->
+                                val deviceDetailViewModel: DeviceDetailViewModel by viewModels {
+                                    DeviceDetailViewModel.provideFactory(
+                                        scannedDeviceRepository
+                                    )
+                                }
+                                Log.d(
+                                    TAG,
+                                    "${
+                                        connectedDeviceRepository.streamAll().collectAsState().value
+                                    }"
+                                )
+                                val deviceId =
+                                    backStackEntry.arguments?.getString("deviceId") ?: "no id :("
+                                val device = deviceDetailViewModel.getScannedDeviceById(deviceId)
+                                    .collectAsState().value
+                                DeviceDetail(device = device, onConnect = { id ->
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
+                                            applicationContext,
+                                            Manifest.permission.BLUETOOTH_CONNECT
+                                        ) != PackageManager.PERMISSION_GRANTED
+                                    ) {
+                                        requestLocationPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
+                                    } else {
+                                        bluetoothScanner.stopScan()
+                                        bluetoothClientService.connect(id)
+                                    }
+                                })
+                            }
+
+                            composable("testrunner") {
+                                val testCaseListViewModel: TestCaseListViewModel by viewModels {
+                                    TestCaseListViewModel.provideFactory(
+                                        connectedDeviceRepository
+                                    )
+                                }
+                                TestCaseList(connectedDevices = testCaseListViewModel.connectedDevices.collectAsState().value)
+                            }
                         }
                     }
                 }
