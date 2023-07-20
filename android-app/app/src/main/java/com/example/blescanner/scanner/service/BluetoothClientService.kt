@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 class BluetoothClientService(
-    private val bluetoothManager: BluetoothManager,
+    bluetoothManager: BluetoothManager,
     private val coroutineScope: CoroutineScope,
     private val context: Context
 ) {

@@ -4,8 +4,11 @@ import android.util.Log
 import com.example.blescanner.model.BluetoothScannedDevice
 import com.example.blescanner.scanner.service.BluetoothClientService
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -18,6 +21,11 @@ class ConnectedDeviceRepository(
 
     private val connectedDevicesStream: MutableStateFlow<List<BluetoothScannedDevice>> =
         MutableStateFlow(emptyList())
+
+    private val _deviceRemovedEvent: MutableSharedFlow<BluetoothScannedDevice> =
+        MutableSharedFlow()
+    val deviceRemovedEvent: SharedFlow<BluetoothScannedDevice> =
+        _deviceRemovedEvent.asSharedFlow()
 
     init {
         coroutineScope.launch {
@@ -33,6 +41,7 @@ class ConnectedDeviceRepository(
                 Log.d("repository", "disconnected $it")
                 connectedDevices.remove(it)
                 connectedDevicesStream.update { connectedDevices.toList() }
+                _deviceRemovedEvent.emit(it)
             }
         }
     }
