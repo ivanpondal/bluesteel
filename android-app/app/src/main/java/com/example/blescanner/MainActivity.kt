@@ -27,9 +27,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.flowWithLifecycle
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -49,7 +46,6 @@ import com.example.blescanner.testrunner.TestCaseListViewModel
 import com.example.blescanner.ui.theme.BLEScannerTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 const val REQUEST_ENABLE_BT: Int = 1
 const val TAG = "MainActivity"
@@ -101,12 +97,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        lifecycleScope.launch {
-            bleViewModel.deviceConnectionEvent.flowWithLifecycle(
-                lifecycle = lifecycle,
-                Lifecycle.State.STARTED
-            ).collect { Log.d(TAG, "recibí conexión de ${it.device}") }
-        }
         setContent {
             BLEScannerTheme {
                 Surface(
@@ -224,7 +214,11 @@ class MainActivity : ComponentActivity() {
                                         connectedDeviceRepository
                                     )
                                 }
-                                TestCaseList(connectedDevices = testCaseListViewModel.connectedDevices.collectAsState().value)
+                                TestCaseList(
+                                    connectedDevices = testCaseListViewModel.connectedDevices.collectAsState().value,
+                                    selectedDevices = testCaseListViewModel.selectedDevices.collectAsState().value,
+                                    onDeviceToggle = { testCaseListViewModel.toggle(it) }
+                                )
                             }
                         }
                     }

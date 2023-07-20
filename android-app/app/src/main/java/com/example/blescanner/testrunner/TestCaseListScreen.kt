@@ -43,6 +43,8 @@ import com.example.blescanner.ui.theme.BLEScannerTheme
 @Composable
 fun TestCaseList(
     connectedDevices: List<BluetoothScannedDevice>,
+    selectedDevices: Map<String, Boolean>,
+    onDeviceToggle: (deviceId: String) -> Unit
 ) {
     Column {
         LazyColumn(
@@ -52,10 +54,11 @@ fun TestCaseList(
         ) {
             items(connectedDevices, key = { it.id }) {
                 Card(
+                    elevation = 2.dp,
                     modifier = Modifier.toggleable(
                         role = Role.Switch,
-                        value = false,
-                        onValueChange = {},
+                        value = selectedDevices[it.id] ?: false,
+                        onValueChange = { _ -> onDeviceToggle(it.id) },
                     ),
                 ) {
                     Row(
@@ -66,10 +69,7 @@ fun TestCaseList(
                     ) {
                         Text(it.id, fontSize = 14.sp)
                         Spacer(Modifier.weight(1.0f))
-                        Switch(
-                            checked = false,
-                            onCheckedChange = null,
-                        )
+                        Switch(checked = selectedDevices[it.id] ?: false, onCheckedChange = null)
                     }
                 }
             }
@@ -101,7 +101,7 @@ fun TestCaseList(
                             .width(2.dp)
                     )
                     Text(
-                        "Selected",
+                        "SR-OW-1",
                         color = MaterialTheme.colors.secondaryVariant,
                         fontWeight = FontWeight.Bold
                     )
@@ -109,7 +109,7 @@ fun TestCaseList(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }) {
                         DropdownMenuItem(onClick = { /* Handle refresh! */ }) {
-                            Text("Refresh")
+                            Text("SR-OW-1")
                         }
                         DropdownMenuItem(onClick = { /* Handle settings! */ }) {
                             Text("Settings")
@@ -137,6 +137,10 @@ fun TestCaseList(
 @Composable
 fun TestCaseListPreview() {
     BLEScannerTheme {
-        TestCaseList(BluetoothDeviceData.sampleDevices)
+        TestCaseList(
+            connectedDevices = BluetoothDeviceData.sampleDevices,
+            selectedDevices = mapOf(BluetoothDeviceData.sampleDevices.first().id to true),
+            onDeviceToggle = { _ -> }
+        )
     }
 }

@@ -26,11 +26,7 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
         bluetoothManager.adapter
     }
 
-    private val _deviceConnectionEvent: MutableSharedFlow<BluetoothGatt> = MutableSharedFlow()
-    val deviceConnectionEvent: SharedFlow<BluetoothGatt> = _deviceConnectionEvent
-
     private var gattServer: BluetoothGattServer? = null
-
     val bluetoothEnabled = bluetoothAdapter.isEnabled
 
     private val advertisementCallback = object : AdvertiseCallback() {

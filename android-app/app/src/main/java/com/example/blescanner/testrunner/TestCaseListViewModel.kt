@@ -3,11 +3,25 @@ package com.example.blescanner.testrunner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.blescanner.scanner.repository.ConnectedDeviceRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 
 class TestCaseListViewModel(private val connectedDeviceRepository: ConnectedDeviceRepository) :
     ViewModel() {
-
     val connectedDevices = connectedDeviceRepository.streamAll()
+
+    private val selectedDevicesMap: MutableMap<String, Boolean> = mutableMapOf()
+
+    private val _selectedDevices: MutableStateFlow<Map<String, Boolean>> =
+        MutableStateFlow(emptyMap())
+    val selectedDevices: StateFlow<Map<String, Boolean>> = _selectedDevices
+
+    fun toggle(deviceId: String) {
+        val oldValue = selectedDevicesMap[deviceId] ?: false
+        selectedDevicesMap[deviceId] = !oldValue
+        _selectedDevices.update { selectedDevicesMap.toMap() }
+    }
 
     companion object {
         fun provideFactory(
