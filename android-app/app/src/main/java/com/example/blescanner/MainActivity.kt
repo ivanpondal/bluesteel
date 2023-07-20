@@ -43,6 +43,7 @@ import com.example.blescanner.scanner.service.BluetoothClientService
 import com.example.blescanner.scanner.service.BluetoothScanner
 import com.example.blescanner.testrunner.TestCaseList
 import com.example.blescanner.testrunner.TestCaseListViewModel
+import com.example.blescanner.testrunner.model.TestCaseId
 import com.example.blescanner.ui.theme.BLEScannerTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -217,7 +218,11 @@ class MainActivity : ComponentActivity() {
                                 TestCaseList(
                                     connectedDevices = testCaseListViewModel.connectedDevices.collectAsState().value,
                                     selectedDevices = testCaseListViewModel.selectedDevices.collectAsState().value,
-                                    onDeviceToggle = { testCaseListViewModel.toggle(it) }
+                                    onDeviceToggle =  testCaseListViewModel::toggle,
+                                    selectedTestCase = testCaseListViewModel.selectedTestCase.collectAsState().value,
+                                    availableTestCases = TestCaseId.values().toList(),
+                                    onTestCaseSelection =  testCaseListViewModel::setTestCase,
+                                    onClickRun = {}
                                 )
                             }
                         }

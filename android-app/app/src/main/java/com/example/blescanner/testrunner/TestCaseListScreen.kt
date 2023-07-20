@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.blescanner.model.BluetoothDeviceData
 import com.example.blescanner.model.BluetoothScannedDevice
+import com.example.blescanner.testrunner.model.TestCaseId
 import com.example.blescanner.ui.theme.BLEScannerTheme
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -44,7 +45,11 @@ import com.example.blescanner.ui.theme.BLEScannerTheme
 fun TestCaseList(
     connectedDevices: List<BluetoothScannedDevice>,
     selectedDevices: Set<String>,
-    onDeviceToggle: (deviceId: String) -> Unit
+    onDeviceToggle: (deviceId: String) -> Unit,
+    selectedTestCase: TestCaseId,
+    availableTestCases: List<TestCaseId>,
+    onTestCaseSelection: (testCase: TestCaseId) -> Unit,
+    onClickRun: () -> Unit,
 ) {
     Column {
         LazyColumn(
@@ -101,28 +106,27 @@ fun TestCaseList(
                             .width(2.dp)
                     )
                     Text(
-                        "SR-OW-1",
+                        selectedTestCase.displayName,
                         color = MaterialTheme.colors.secondaryVariant,
                         fontWeight = FontWeight.Bold
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }) {
-                        DropdownMenuItem(onClick = { /* Handle refresh! */ }) {
-                            Text("SR-OW-1")
-                        }
-                        DropdownMenuItem(onClick = { /* Handle settings! */ }) {
-                            Text("Settings")
-                        }
-                        DropdownMenuItem(onClick = { /* Handle send feedback! */ }) {
-                            Text("Send Feedback")
+                        availableTestCases.map {
+                            DropdownMenuItem(onClick = {
+                                onTestCaseSelection(it)
+                                expanded = false
+                            }) {
+                                Text(it.displayName)
+                            }
                         }
                     }
                 }
             }
 
             Button(
-                onClick = {},
+                onClick = onClickRun,
                 contentPadding = PaddingValues(64.dp, 12.dp, 64.dp, 12.dp),
                 modifier = Modifier
                     .padding(bottom = 16.dp)
@@ -140,7 +144,11 @@ fun TestCaseListPreview() {
         TestCaseList(
             connectedDevices = BluetoothDeviceData.sampleDevices,
             selectedDevices = setOf(BluetoothDeviceData.sampleDevices.first().id),
-            onDeviceToggle = { _ -> }
+            onDeviceToggle = { _ -> },
+            selectedTestCase = TestCaseId.SR_OW_1,
+            availableTestCases = listOf(TestCaseId.SR_OW_1),
+            onTestCaseSelection = { _ -> },
+            onClickRun = { }
         )
     }
 }
