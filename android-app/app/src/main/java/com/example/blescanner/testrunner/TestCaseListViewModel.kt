@@ -13,25 +13,28 @@ class TestCaseListViewModel(connectedDeviceRepository: ConnectedDeviceRepository
     ViewModel() {
     val connectedDevices = connectedDeviceRepository.streamAll()
 
-    private val selectedDevicesMap: MutableMap<String, Boolean> = mutableMapOf()
+    private val selectedDevicesSet: MutableSet<String> = mutableSetOf()
 
-    private val _selectedDevices: MutableStateFlow<Map<String, Boolean>> =
-        MutableStateFlow(emptyMap())
-    val selectedDevices: StateFlow<Map<String, Boolean>> = _selectedDevices
+    private val _selectedDevices: MutableStateFlow<Set<String>> =
+        MutableStateFlow(emptySet())
+    val selectedDevices: StateFlow<Set<String>> = _selectedDevices
 
     init {
         viewModelScope.launch {
             connectedDeviceRepository.deviceRemovedEvent.collect {
-                selectedDevicesMap.remove(it.id)
-                _selectedDevices.update { selectedDevicesMap.toMap() }
+                selectedDevicesSet.remove(it.id)
+                _selectedDevices.update { selectedDevicesSet.toSet() }
             }
         }
     }
 
     fun toggle(deviceId: String) {
-        val oldValue = selectedDevicesMap[deviceId] ?: false
-        selectedDevicesMap[deviceId] = !oldValue
-        _selectedDevices.update { selectedDevicesMap.toMap() }
+        if (selectedDevicesSet.contains(deviceId)) {
+            selectedDevicesSet.remove(deviceId)
+        } else {
+            selectedDevicesSet.add(deviceId)
+        }
+        _selectedDevices.update { selectedDevicesSet.toSet() }
     }
 
     companion object {

@@ -43,7 +43,7 @@ import com.example.blescanner.ui.theme.BLEScannerTheme
 @Composable
 fun TestCaseList(
     connectedDevices: List<BluetoothScannedDevice>,
-    selectedDevices: Map<String, Boolean>,
+    selectedDevices: Set<String>,
     onDeviceToggle: (deviceId: String) -> Unit
 ) {
     Column {
@@ -57,7 +57,7 @@ fun TestCaseList(
                     elevation = 2.dp,
                     modifier = Modifier.toggleable(
                         role = Role.Switch,
-                        value = selectedDevices[it.id] ?: false,
+                        value = selectedDevices.contains(it.id),
                         onValueChange = { _ -> onDeviceToggle(it.id) },
                     ),
                 ) {
@@ -69,7 +69,7 @@ fun TestCaseList(
                     ) {
                         Text(it.id, fontSize = 14.sp)
                         Spacer(Modifier.weight(1.0f))
-                        Switch(checked = selectedDevices[it.id] ?: false, onCheckedChange = null)
+                        Switch(checked = selectedDevices.contains(it.id), onCheckedChange = null)
                     }
                 }
             }
@@ -139,7 +139,7 @@ fun TestCaseListPreview() {
     BLEScannerTheme {
         TestCaseList(
             connectedDevices = BluetoothDeviceData.sampleDevices,
-            selectedDevices = mapOf(BluetoothDeviceData.sampleDevices.first().id to true),
+            selectedDevices = setOf(BluetoothDeviceData.sampleDevices.first().id),
             onDeviceToggle = { _ -> }
         )
     }
