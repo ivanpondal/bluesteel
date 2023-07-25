@@ -29,10 +29,12 @@ import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.blescanner.devicedetail.DeviceDetail
 import com.example.blescanner.devicedetail.DeviceDetailViewModel
 import com.example.blescanner.scanner.DeviceList
@@ -43,6 +45,7 @@ import com.example.blescanner.scanner.service.BluetoothClientService
 import com.example.blescanner.scanner.service.BluetoothScanner
 import com.example.blescanner.testrunner.TestCaseList
 import com.example.blescanner.testrunner.TestCaseListViewModel
+import com.example.blescanner.testrunner.TestCaseRun
 import com.example.blescanner.testrunner.model.TestCaseId
 import com.example.blescanner.ui.theme.BLEScannerTheme
 import kotlinx.coroutines.CoroutineScope
@@ -185,12 +188,6 @@ class MainActivity : ComponentActivity() {
                                         scannedDeviceRepository
                                     )
                                 }
-                                Log.d(
-                                    TAG,
-                                    "${
-                                        connectedDeviceRepository.streamAll().collectAsState().value
-                                    }"
-                                )
                                 val deviceId =
                                     backStackEntry.arguments?.getString("deviceId") ?: "no id :("
                                 val device = deviceDetailViewModel.getScannedDeviceById(deviceId)
@@ -218,12 +215,35 @@ class MainActivity : ComponentActivity() {
                                 TestCaseList(
                                     connectedDevices = testCaseListViewModel.connectedDevices.collectAsState().value,
                                     selectedDevices = testCaseListViewModel.selectedDevices.collectAsState().value,
-                                    onDeviceToggle =  testCaseListViewModel::toggle,
+                                    onDeviceToggle = testCaseListViewModel::toggle,
                                     selectedTestCase = testCaseListViewModel.selectedTestCase.collectAsState().value,
                                     availableTestCases = TestCaseId.values().toList(),
-                                    onTestCaseSelection =  testCaseListViewModel::setTestCase,
-                                    onClickRun = {}
+                                    onTestCaseSelection = testCaseListViewModel::setTestCase,
+                                    onClickRun = {
+                                        navController.navigate(
+                                            "testrunner/${testCaseListViewModel.selectedTestCase.value}?devices=${
+                                                testCaseListViewModel.selectedDevices.value.joinToString(
+                                                    ","
+                                                )
+                                            }"
+                                        )
+                                    }
                                 )
+                            }
+
+                            composable("testrunner/{testCase}?devices={devices}",
+                                arguments = listOf(
+                                    navArgument("testCase") { type = NavType.StringType },
+                                    navArgument("devices") { type = NavType.StringType }
+                                )) { backStackEntry ->
+                                val testCase = TestCaseId.valueOf(
+                                    backStackEntry.arguments?.getString("testCase") ?: "N/A"
+                                )
+                                val devices =
+                                    backStackEntry.arguments?.getString("devices")?.split(",")
+                                        ?: listOf()
+
+                                TestCaseRun(testCase = testCase, selectedDevices = devices.toSet())
                             }
                         }
                     }
