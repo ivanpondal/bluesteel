@@ -12,6 +12,21 @@ import kotlinx.coroutines.launch
 
 class TestCaseListViewModel(connectedDeviceRepository: ConnectedDeviceRepository) :
     ViewModel() {
+
+    companion object {
+        fun provideFactory(
+            connectedDeviceRepository: ConnectedDeviceRepository
+        ): ViewModelProvider.Factory =
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return TestCaseListViewModel(connectedDeviceRepository) as T
+                }
+            }
+
+        private val TAG = TestCaseListViewModel::class.simpleName
+    }
+
     val connectedDevices = connectedDeviceRepository.streamAll()
 
     private val selectedDevicesSet: MutableSet<String> = mutableSetOf()
@@ -46,15 +61,4 @@ class TestCaseListViewModel(connectedDeviceRepository: ConnectedDeviceRepository
         _selectedTestCase.update { testCaseId }
     }
 
-    companion object {
-        fun provideFactory(
-            connectedDeviceRepository: ConnectedDeviceRepository
-        ): ViewModelProvider.Factory =
-            object : ViewModelProvider.Factory {
-                @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return TestCaseListViewModel(connectedDeviceRepository) as T
-                }
-            }
-    }
 }

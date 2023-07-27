@@ -62,7 +62,7 @@ class BluetoothClientService(
                 "unknown $newState"
             }
 
-            Log.d(TAG, "connection state change, status: $gattStatus, state: $state")
+            Log.d(TAG, "connection state change, status: $gattStatus $state, state: $state $newState")
 
             if (gattStatus == "success" && state == "connected" && gatt !== null) {
                 connectedGatts[gatt.device.address] = gatt

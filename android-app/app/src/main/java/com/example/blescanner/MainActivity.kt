@@ -52,9 +52,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
 const val REQUEST_ENABLE_BT: Int = 1
-const val TAG = "MainActivity"
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        private val TAG = MainActivity::class.simpleName
+    }
 
     private val activityCoroutineScope = CoroutineScope(Dispatchers.IO)
 
@@ -76,9 +78,7 @@ class MainActivity : ComponentActivity() {
         ScannedDeviceRepository(bluetoothScanner, activityCoroutineScope)
     }
 
-    private val connectedDeviceRepository: ConnectedDeviceRepository by lazy {
-        ConnectedDeviceRepository(bluetoothClientService, activityCoroutineScope)
-    }
+    private lateinit var connectedDeviceRepository: ConnectedDeviceRepository
 
     private val turnOnBluetooth =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -100,6 +100,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        connectedDeviceRepository =
+            ConnectedDeviceRepository(bluetoothClientService, activityCoroutineScope)
 
         setContent {
             BLEScannerTheme {

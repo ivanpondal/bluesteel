@@ -17,6 +17,10 @@ class ConnectedDeviceRepository(
     private val bluetoothClientService: BluetoothClientService,
     coroutineScope: CoroutineScope
 ) {
+
+    companion object {
+        private val TAG = ConnectedDeviceRepository::class.simpleName
+    }
     private val connectedDevices: MutableSet<BluetoothScannedDevice> = mutableSetOf()
 
     private val connectedDevicesStream: MutableStateFlow<List<BluetoothScannedDevice>> =
@@ -30,7 +34,7 @@ class ConnectedDeviceRepository(
     init {
         coroutineScope.launch {
             bluetoothClientService.deviceConnectionEvent.collect {
-                Log.d("repository", "connected $it")
+                Log.d(TAG, "connected $it")
                 connectedDevices.add(it)
                 connectedDevicesStream.update { connectedDevices.toList() }
             }
@@ -38,7 +42,7 @@ class ConnectedDeviceRepository(
 
         coroutineScope.launch {
             bluetoothClientService.deviceDisconnectionEvent.collect {
-                Log.d("repository", "disconnected $it")
+                Log.d(TAG, "disconnected $it")
                 connectedDevices.remove(it)
                 connectedDevicesStream.update { connectedDevices.toList() }
                 _deviceRemovedEvent.emit(it)
