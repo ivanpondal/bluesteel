@@ -23,10 +23,14 @@ import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -50,6 +54,7 @@ import com.example.blescanner.testrunner.model.TestCaseId
 import com.example.blescanner.ui.theme.BLEScannerTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import java.util.Collections.emptyList
 
 const val REQUEST_ENABLE_BT: Int = 1
 
@@ -245,7 +250,24 @@ class MainActivity : ComponentActivity() {
                                 val devices =
                                     backStackEntry.arguments?.getString("devices")?.split(",")
                                         ?: listOf()
+                                val owner = LocalLifecycleOwner.current
 
+                                DisposableEffect(devices, testCase, owner) {
+                                    val observer = LifecycleEventObserver { _, event ->
+                                        when (event) {
+                                            Lifecycle.Event.ON_CREATE -> {
+                                                // run given test
+                                            }
+                                            else -> {}
+                                        }
+                                    }
+
+                                    // Add the observer to the lifecycle
+                                    owner.lifecycle.addObserver(observer)
+                                    onDispose {
+                                        owner.lifecycle.removeObserver(observer)
+                                    }
+                                }
                                 TestCaseRun(testCase = testCase, selectedDevices = devices.toSet())
                             }
                         }
