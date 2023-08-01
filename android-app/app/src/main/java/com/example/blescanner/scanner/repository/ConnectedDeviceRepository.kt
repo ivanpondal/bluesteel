@@ -21,6 +21,7 @@ class ConnectedDeviceRepository(
     companion object {
         private val TAG = ConnectedDeviceRepository::class.simpleName
     }
+
     private val connectedDevices: MutableSet<BluetoothSession> = mutableSetOf()
 
     private val connectedDevicesStream: MutableStateFlow<List<BluetoothSession>> =
@@ -52,5 +53,9 @@ class ConnectedDeviceRepository(
 
     fun streamAll(): StateFlow<List<BluetoothSession>> {
         return connectedDevicesStream.asStateFlow()
+    }
+
+    fun getById(id: String): BluetoothSession {
+        return connectedDevices.first { it.id == id }
     }
 }

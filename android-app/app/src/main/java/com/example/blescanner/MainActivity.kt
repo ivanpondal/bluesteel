@@ -253,7 +253,13 @@ class MainActivity : ComponentActivity() {
                                         ?: listOf()
                                 val owner = LocalLifecycleOwner.current
 
-                                val testCaseRunViewModel: TestCaseRunViewModel by viewModels()
+                                val testCaseRunViewModel: TestCaseRunViewModel by viewModels {
+                                    TestCaseRunViewModel.provideFactory(
+                                        connectedDeviceRepository,
+                                        testCase,
+                                        devices.toSet()
+                                    )
+                                }
 
                                 DisposableEffect(devices, testCase, owner) {
                                     val observer = LifecycleEventObserver { _, event ->
@@ -274,7 +280,10 @@ class MainActivity : ComponentActivity() {
                                         owner.lifecycle.removeObserver(observer)
                                     }
                                 }
-                                TestCaseRun(testCase = testCase, selectedDevices = devices.toSet())
+                                TestCaseRun(
+                                    testCase = testCaseRunViewModel.testCase,
+                                    selectedDevices = testCaseRunViewModel.devices
+                                )
                             }
                         }
                     }
