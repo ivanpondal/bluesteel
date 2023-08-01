@@ -1,6 +1,6 @@
 package com.example.blescanner.scanner.repository
 
-import com.example.blescanner.model.BluetoothScannedDevice
+import com.example.blescanner.model.BluetoothDeviceAdvertisement
 import com.example.blescanner.scanner.service.BluetoothScanner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
@@ -18,9 +18,9 @@ class ScannedDeviceRepository(
     private val bluetoothScanner: BluetoothScanner,
     coroutineScope: CoroutineScope
 ) {
-    private val scannedDevices: MutableSet<BluetoothScannedDevice> = mutableSetOf()
+    private val scannedDevices: MutableSet<BluetoothDeviceAdvertisement> = mutableSetOf()
 
-    private val scannedDevicesStream: MutableStateFlow<List<BluetoothScannedDevice>> =
+    private val scannedDevicesStream: MutableStateFlow<List<BluetoothDeviceAdvertisement>> =
         MutableStateFlow(emptyList())
 
     init {
@@ -38,15 +38,15 @@ class ScannedDeviceRepository(
         }
     }
 
-    fun streamAll(): StateFlow<List<BluetoothScannedDevice>> {
+    fun streamAll(): StateFlow<List<BluetoothDeviceAdvertisement>> {
         return scannedDevicesStream.asStateFlow()
     }
 
-    fun streamById(id: String): Flow<BluetoothScannedDevice> {
+    fun streamById(id: String): Flow<BluetoothDeviceAdvertisement> {
         return scannedDevicesStream.map { devices -> devices.first { it.id == id } }
     }
 
-    fun findById(id: String): BluetoothScannedDevice {
+    fun findById(id: String): BluetoothDeviceAdvertisement {
         return scannedDevices.first { it.id == id }
     }
 }

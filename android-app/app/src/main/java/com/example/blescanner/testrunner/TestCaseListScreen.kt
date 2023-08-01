@@ -36,14 +36,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.blescanner.model.BluetoothDeviceData
-import com.example.blescanner.model.BluetoothScannedDevice
+import com.example.blescanner.model.Identifiable
 import com.example.blescanner.testrunner.model.TestCaseId
 import com.example.blescanner.ui.theme.BLEScannerTheme
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun TestCaseList(
-    connectedDevices: List<BluetoothScannedDevice>,
+    connectedDevices: List<Identifiable<String>>,
     selectedDevices: Set<String>,
     onDeviceToggle: (deviceId: String) -> Unit,
     selectedTestCase: TestCaseId,

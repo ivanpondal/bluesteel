@@ -50,6 +50,7 @@ import com.example.blescanner.scanner.service.BluetoothScanner
 import com.example.blescanner.testrunner.TestCaseList
 import com.example.blescanner.testrunner.TestCaseListViewModel
 import com.example.blescanner.testrunner.TestCaseRun
+import com.example.blescanner.testrunner.TestCaseRunViewModel
 import com.example.blescanner.testrunner.model.TestCaseId
 import com.example.blescanner.ui.theme.BLEScannerTheme
 import kotlinx.coroutines.CoroutineScope
@@ -252,13 +253,18 @@ class MainActivity : ComponentActivity() {
                                         ?: listOf()
                                 val owner = LocalLifecycleOwner.current
 
+                                val testCaseRunViewModel: TestCaseRunViewModel by viewModels()
+
                                 DisposableEffect(devices, testCase, owner) {
                                     val observer = LifecycleEventObserver { _, event ->
                                         when (event) {
                                             Lifecycle.Event.ON_CREATE -> {
-                                                // run given test
+                                                testCaseRunViewModel.runTest()
                                             }
-                                            else -> {}
+
+                                            else -> {
+                                                // do nothing
+                                            }
                                         }
                                     }
 

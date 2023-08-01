@@ -1,7 +1,7 @@
 package com.example.blescanner.scanner.repository
 
 import android.util.Log
-import com.example.blescanner.model.BluetoothScannedDevice
+import com.example.blescanner.model.BluetoothSession
 import com.example.blescanner.scanner.service.BluetoothClientService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -21,14 +21,14 @@ class ConnectedDeviceRepository(
     companion object {
         private val TAG = ConnectedDeviceRepository::class.simpleName
     }
-    private val connectedDevices: MutableSet<BluetoothScannedDevice> = mutableSetOf()
+    private val connectedDevices: MutableSet<BluetoothSession> = mutableSetOf()
 
-    private val connectedDevicesStream: MutableStateFlow<List<BluetoothScannedDevice>> =
+    private val connectedDevicesStream: MutableStateFlow<List<BluetoothSession>> =
         MutableStateFlow(emptyList())
 
-    private val _deviceRemovedEvent: MutableSharedFlow<BluetoothScannedDevice> =
+    private val _deviceRemovedEvent: MutableSharedFlow<BluetoothSession> =
         MutableSharedFlow()
-    val deviceRemovedEvent: SharedFlow<BluetoothScannedDevice> =
+    val deviceRemovedEvent: SharedFlow<BluetoothSession> =
         _deviceRemovedEvent.asSharedFlow()
 
     init {
@@ -50,7 +50,7 @@ class ConnectedDeviceRepository(
         }
     }
 
-    fun streamAll(): StateFlow<List<BluetoothScannedDevice>> {
+    fun streamAll(): StateFlow<List<BluetoothSession>> {
         return connectedDevicesStream.asStateFlow()
     }
 }

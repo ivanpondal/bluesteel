@@ -8,7 +8,7 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresPermission
-import com.example.blescanner.model.BluetoothScannedDevice
+import com.example.blescanner.model.BluetoothSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -29,14 +29,14 @@ class BluetoothClientService(
     private val connectedGatts: MutableMap<String, BluetoothGatt> =
         mutableMapOf()
 
-    private val _deviceConnectionEvent: MutableSharedFlow<BluetoothScannedDevice> =
+    private val _deviceConnectionEvent: MutableSharedFlow<BluetoothSession> =
         MutableSharedFlow()
-    val deviceConnectionEvent: SharedFlow<BluetoothScannedDevice> =
+    val deviceConnectionEvent: SharedFlow<BluetoothSession> =
         _deviceConnectionEvent.asSharedFlow()
 
-    private val _deviceDisconnectionEvent: MutableSharedFlow<BluetoothScannedDevice> =
+    private val _deviceDisconnectionEvent: MutableSharedFlow<BluetoothSession> =
         MutableSharedFlow()
-    val deviceDisconnectionEvent: SharedFlow<BluetoothScannedDevice> =
+    val deviceDisconnectionEvent: SharedFlow<BluetoothSession> =
         _deviceDisconnectionEvent.asSharedFlow()
 
     private val gattClientCallback = object : BluetoothGattCallback() {
@@ -62,32 +62,22 @@ class BluetoothClientService(
                 "unknown $newState"
             }
 
-            Log.d(TAG, "connection state change, status: $gattStatus $state, state: $state $newState")
+            Log.d(
+                TAG,
+                "connection state change, status: $gattStatus $state, state: $state $newState"
+            )
 
             if (gattStatus == "success" && state == "connected" && gatt !== null) {
                 connectedGatts[gatt.device.address] = gatt
                 coroutineScope.launch {
-                    gatt.device.let {
-                        _deviceConnectionEvent.emit(
-                            BluetoothScannedDevice(
-                                it.address, 0, it.name,
-                                emptyList()
-                            )
-                        )
-                    }
+                    gatt.device.let { _deviceConnectionEvent.emit(BluetoothSession(gatt)) }
                 }
             } else {
                 Log.d(TAG, "something failed $gattStatus $state $status $newState")
-                gatt?.close()
-                coroutineScope.launch {
-                    gatt?.device?.let {
-                        _deviceDisconnectionEvent.emit(
-                            BluetoothScannedDevice(
-                                it.address, 0, it.name,
-                                emptyList()
-                            )
-                        )
-                    }
+                gatt?.let {
+                    connectedGatts.remove(it.device.address)
+                    coroutineScope.launch { _deviceDisconnectionEvent.emit(BluetoothSession(it)) }
+                    it.close()
                 }
             }
         }

@@ -10,22 +10,21 @@ import android.bluetooth.le.ScanSettings
 import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
-import com.example.blescanner.model.BluetoothScannedDevice
+import com.example.blescanner.model.BluetoothDeviceAdvertisement
 import com.example.blescanner.scanner.service.BluetoothConstants.SERVICE_UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
-import java.util.UUID
 
 class BluetoothScanner(
     private val bluetoothManager: BluetoothManager,
     private val coroutineScope: CoroutineScope
 ) {
     // Add extra buffer capacity because default is 0 and tryEmit fails to emit
-    private val _scannedDeviceEvent: MutableSharedFlow<BluetoothScannedDevice> =
+    private val _scannedDeviceEvent: MutableSharedFlow<BluetoothDeviceAdvertisement> =
         MutableSharedFlow(extraBufferCapacity = 10)
-    val scannedDeviceEvent: SharedFlow<BluetoothScannedDevice> = _scannedDeviceEvent
+    val scannedDeviceEvent: SharedFlow<BluetoothDeviceAdvertisement> = _scannedDeviceEvent
 
     private val bluetoothLeScanner: BluetoothLeScanner by lazy {
         bluetoothManager.adapter.bluetoothLeScanner
@@ -35,11 +34,11 @@ class BluetoothScanner(
         // Permission should have been asked in main activity
         @SuppressLint("MissingPermission")
         override fun onScanResult(callbackType: Int, result: ScanResult) {
-            val scannedDevice = BluetoothScannedDevice(
+            val scannedDevice = BluetoothDeviceAdvertisement(
                 id = result.device.address,
                 rssi = result.rssi,
                 name = result.device.name,
-                advertisements = result.scanRecord?.serviceUuids ?: emptyList()
+                services = result.scanRecord?.serviceUuids ?: emptyList()
             )
 
             coroutineScope.launch {
