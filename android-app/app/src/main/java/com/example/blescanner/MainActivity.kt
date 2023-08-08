@@ -55,6 +55,7 @@ import com.example.blescanner.testrunner.model.TestCaseId
 import com.example.blescanner.ui.theme.BLEScannerTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
 import java.util.Collections.emptyList
 
 const val REQUEST_ENABLE_BT: Int = 1
@@ -64,24 +65,19 @@ class MainActivity : ComponentActivity() {
         private val TAG = MainActivity::class.simpleName
     }
 
-    private val activityCoroutineScope = CoroutineScope(Dispatchers.IO)
-
     private val bleViewModel: BluetoothDevicesViewModel by viewModels()
     private val bluetoothManager: BluetoothManager by lazy {
         application.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
     }
     private val bluetoothScanner: BluetoothScanner by lazy {
-        BluetoothScanner(
-            bluetoothManager,
-            activityCoroutineScope
-        )
+        BluetoothScanner(bluetoothManager, MainScope())
     }
     private val bluetoothClientService: BluetoothClientService by lazy {
-        BluetoothClientService(bluetoothManager, activityCoroutineScope, this)
+        BluetoothClientService(bluetoothManager, CoroutineScope(Dispatchers.IO), this)
     }
 
     private val scannedDeviceRepository: ScannedDeviceRepository by lazy {
-        ScannedDeviceRepository(bluetoothScanner, activityCoroutineScope)
+        ScannedDeviceRepository(bluetoothScanner, MainScope())
     }
 
     private lateinit var connectedDeviceRepository: ConnectedDeviceRepository
@@ -108,7 +104,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         connectedDeviceRepository =
-            ConnectedDeviceRepository(bluetoothClientService, activityCoroutineScope)
+            ConnectedDeviceRepository(bluetoothClientService, MainScope())
 
         setContent {
             BLEScannerTheme {

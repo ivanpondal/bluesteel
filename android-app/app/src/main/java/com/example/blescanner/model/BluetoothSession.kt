@@ -9,11 +9,11 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 
 class BluetoothSession(
     private val bluetoothDevice: BluetoothDevice,
@@ -36,14 +36,28 @@ class BluetoothSession(
     private val _disconnectionEvent: MutableSharedFlow<String> = MutableSharedFlow()
     val disconnectionEvent: SharedFlow<String> = _disconnectionEvent.asSharedFlow()
 
+    private val discoveryChannel = Channel<Boolean>()
+
     @SuppressLint("MissingPermission")
     suspend fun discoverServices() {
-        suspendCancellableCoroutine<Void> {
-            bluetoothGatt?.discoverServices()
+        coroutineScope.launch {
+            bluetoothGatt?.let {
+                it.discoverServices()
+                discoveryChannel.receive()
+            }
         }
     }
 
     private val gattClientCallback = object : BluetoothGattCallback() {
+        override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+            super.onServicesDiscovered(gatt, status)
+
+            coroutineScope.launch {
+                Log.d(TAG, "Found services for ${this@BluetoothSession.id}: ${gatt?.services}")
+                discoveryChannel.send(true)
+            }
+        }
+
         @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
             super.onConnectionStateChange(gatt, status, newState)
@@ -75,6 +89,7 @@ class BluetoothSession(
                 coroutineScope.launch {
                     gatt.device.let { _connectionEvent.emit(this@BluetoothSession.id) }
                 }
+                bluetoothGatt = gatt
             } else {
                 Log.d(
                     TAG,

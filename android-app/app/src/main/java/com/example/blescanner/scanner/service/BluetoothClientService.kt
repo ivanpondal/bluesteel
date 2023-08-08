@@ -38,28 +38,30 @@ class BluetoothClientService(
 
     @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
     fun connect(address: String) {
-        val bluetoothDevice = bluetoothAdapter.getRemoteDevice(address)
-        val newBluetoothSession = BluetoothSession(bluetoothDevice, coroutineScope, context)
         coroutineScope.launch {
-            newBluetoothSession.connectionEvent.collect { address ->
-                val connectedSession = connectingSessions.get(address)
-                connectedSessions.remove(address)
-                connectedSession?.let {
-                    connectedSessions[address] = it
-                    _deviceConnectionEvent.emit(it)
+            val bluetoothDevice = bluetoothAdapter.getRemoteDevice(address)
+            val newBluetoothSession = BluetoothSession(bluetoothDevice, coroutineScope, context)
+            launch {
+                newBluetoothSession.connectionEvent.collect { address ->
+                    val connectedSession = connectingSessions.get(address)
+                    connectedSessions.remove(address)
+                    connectedSession?.let {
+                        connectedSessions[address] = it
+                        _deviceConnectionEvent.emit(it)
+                    }
                 }
             }
-        }
-        coroutineScope.launch {
-            newBluetoothSession.disconnectionEvent.collect { address ->
-                val disconnectedSession = connectedSessions.get(address)
-                connectedSessions.remove(address)
-                disconnectedSession?.let {
-                    _deviceDisconnectionEvent.emit(it)
+            launch {
+                newBluetoothSession.disconnectionEvent.collect { address ->
+                    val disconnectedSession = connectedSessions.get(address)
+                    connectedSessions.remove(address)
+                    disconnectedSession?.let {
+                        _deviceDisconnectionEvent.emit(it)
+                    }
                 }
             }
+            connectingSessions[address] = newBluetoothSession
+            newBluetoothSession.connect()
         }
-        connectingSessions[address] = newBluetoothSession
-        newBluetoothSession.connect()
     }
 }
