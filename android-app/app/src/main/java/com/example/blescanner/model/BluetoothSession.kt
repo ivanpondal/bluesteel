@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.os.Build
 import android.util.Log
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class BluetoothSession(
     private val bluetoothDevice: BluetoothDevice,
@@ -37,18 +39,76 @@ class BluetoothSession(
     val disconnectionEvent: SharedFlow<String> = _disconnectionEvent.asSharedFlow()
 
     private val discoveryChannel = Channel<Boolean>()
+    private val writeWithResponseChannel = Channel<Boolean>()
 
     @SuppressLint("MissingPermission")
     suspend fun discoverServices() {
-        coroutineScope.launch {
-            bluetoothGatt?.let {
-                it.discoverServices()
-                discoveryChannel.receive()
+        bluetoothGatt?.let {
+            it.discoverServices()
+            discoveryChannel.receive()
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    suspend fun writeWithResponse(serviceUUID: UUID, characteristicUUID: UUID, message: ByteArray) {
+        bluetoothGatt?.let { gatt ->
+            gatt.getService(serviceUUID).let { service ->
+                service.getCharacteristic(characteristicUUID).let { characteristic ->
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        gatt.writeCharacteristic(
+                            characteristic,
+                            message,
+                            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                        )
+                    } else {
+                        characteristic.writeType =
+                            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                        characteristic.value = message
+                        gatt.writeCharacteristic(characteristic)
+                    }
+                    writeWithResponseChannel.receive()
+                }
             }
         }
     }
 
     private val gattClientCallback = object : BluetoothGattCallback() {
+        override fun onCharacteristicWrite(
+            gatt: BluetoothGatt?,
+            characteristic: BluetoothGattCharacteristic?,
+            status: Int
+        ) {
+            super.onCharacteristicWrite(gatt, characteristic, status)
+
+            with(characteristic) {
+                var success = false
+                when (status) {
+                    BluetoothGatt.GATT_SUCCESS -> {
+                        success = true
+                        coroutineScope.launch { writeWithResponseChannel.send(true) }
+                    }
+
+                    BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH -> {
+                        Log.e(TAG, "Write exceeded connection ATT MTU!")
+                    }
+
+                    BluetoothGatt.GATT_WRITE_NOT_PERMITTED -> {
+                        Log.e(TAG, "Write not permitted for ${this?.uuid}!")
+                    }
+
+                    else -> {
+                        Log.e(
+                            TAG,
+                            "Characteristic write failed for ${this?.uuid}, error: $status"
+                        )
+                    }
+                }
+                if (!success) {
+                    coroutineScope.launch { writeWithResponseChannel.send(false) }
+                }
+            }
+        }
+
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             super.onServicesDiscovered(gatt, status)
 
