@@ -1,12 +1,7 @@
 package com.example.blescanner.scanner.service
 
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothManager
 import android.content.Context
-import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.example.blescanner.model.BluetoothSession
 import kotlinx.coroutines.CoroutineScope
@@ -26,7 +21,9 @@ class BluetoothClientService(
 
     private val bluetoothAdapter = bluetoothManager.adapter
 
-    private val connectedGatts: MutableMap<String, BluetoothGatt> =
+    private val connectingSessions: MutableMap<String, BluetoothSession> = mutableMapOf()
+
+    private val connectedSessions: MutableMap<String, BluetoothSession> =
         mutableMapOf()
 
     private val _deviceConnectionEvent: MutableSharedFlow<BluetoothSession> =
@@ -39,62 +36,30 @@ class BluetoothClientService(
     val deviceDisconnectionEvent: SharedFlow<BluetoothSession> =
         _deviceDisconnectionEvent.asSharedFlow()
 
-    private val gattClientCallback = object : BluetoothGattCallback() {
-        @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
-        override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
-            super.onConnectionStateChange(gatt, status, newState)
-
-            val gattStatus = if (BluetoothGatt.GATT_SUCCESS == status) {
-                "success"
-            } else if (BluetoothGatt.GATT_FAILURE == status) {
-                "failure"
-            } else {
-                "unknown $status"
-            }
-
-            val state = if (BluetoothGatt.STATE_CONNECTED == newState) {
-                "connected"
-            } else if (BluetoothGatt.STATE_CONNECTING == newState) {
-                "connecting"
-            } else if (BluetoothGatt.STATE_DISCONNECTED == newState) {
-                "disconnected"
-            } else {
-                "unknown $newState"
-            }
-
-            Log.d(
-                TAG,
-                "connection state change, status: $gattStatus $state, state: $state $newState"
-            )
-
-            if (gattStatus == "success" && state == "connected" && gatt !== null) {
-                connectedGatts[gatt.device.address] = gatt
-                coroutineScope.launch {
-                    gatt.device.let { _deviceConnectionEvent.emit(BluetoothSession(gatt)) }
-                }
-            } else {
-                Log.d(TAG, "something failed $gattStatus $state $status $newState")
-                gatt?.let {
-                    connectedGatts.remove(it.device.address)
-                    coroutineScope.launch { _deviceDisconnectionEvent.emit(BluetoothSession(it)) }
-                    it.close()
-                }
-            }
-        }
-    }
-
     @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
     fun connect(address: String) {
         val bluetoothDevice = bluetoothAdapter.getRemoteDevice(address)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            bluetoothDevice.connectGatt(
-                context,
-                false,
-                gattClientCallback,
-                BluetoothDevice.TRANSPORT_LE
-            )
-        } else {
-            bluetoothDevice.connectGatt(context, false, gattClientCallback)
+        val newBluetoothSession = BluetoothSession(bluetoothDevice, coroutineScope, context)
+        coroutineScope.launch {
+            newBluetoothSession.connectionEvent.collect { address ->
+                val connectedSession = connectingSessions.get(address)
+                connectedSessions.remove(address)
+                connectedSession?.let {
+                    connectedSessions[address] = it
+                    _deviceConnectionEvent.emit(it)
+                }
+            }
         }
+        coroutineScope.launch {
+            newBluetoothSession.disconnectionEvent.collect { address ->
+                val disconnectedSession = connectedSessions.get(address)
+                connectedSessions.remove(address)
+                disconnectedSession?.let {
+                    _deviceDisconnectionEvent.emit(it)
+                }
+            }
+        }
+        connectingSessions[address] = newBluetoothSession
+        newBluetoothSession.connect()
     }
 }

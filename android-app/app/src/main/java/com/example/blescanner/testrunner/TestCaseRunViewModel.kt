@@ -2,8 +2,10 @@ package com.example.blescanner.testrunner
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.example.blescanner.scanner.repository.ConnectedDeviceRepository
 import com.example.blescanner.testrunner.model.TestCaseId
+import kotlinx.coroutines.launch
 
 class TestCaseRunViewModel(
     private val connectedDeviceRepository: ConnectedDeviceRepository,
@@ -28,7 +30,9 @@ class TestCaseRunViewModel(
 
     fun runTest() {
         val firstDevice = devices.first()
-
         val session = connectedDeviceRepository.getById(firstDevice)
+        viewModelScope.launch {
+            session.discoverServices()
+        }
     }
 }
