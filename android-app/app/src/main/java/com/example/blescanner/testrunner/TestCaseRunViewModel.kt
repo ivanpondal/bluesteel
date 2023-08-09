@@ -1,13 +1,16 @@
 package com.example.blescanner.testrunner
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.blescanner.BluetoothDevicesViewModel
+import com.example.blescanner.BluetoothDevicesViewModel.Companion.CHARACTERISTIC_UUID
+import com.example.blescanner.BluetoothDevicesViewModel.Companion.SERVICE_UUID
+import com.example.blescanner.model.BluetoothSession.Companion.MAX_ATT_MTU
 import com.example.blescanner.scanner.repository.ConnectedDeviceRepository
 import com.example.blescanner.testrunner.model.TestCaseId
 import kotlinx.coroutines.launch
-import java.nio.charset.StandardCharsets
+import java.nio.charset.StandardCharsets.UTF_8
 
 class TestCaseRunViewModel(
     private val connectedDeviceRepository: ConnectedDeviceRepository,
@@ -35,10 +38,10 @@ class TestCaseRunViewModel(
         val session = connectedDeviceRepository.getById(firstDevice)
         viewModelScope.launch {
             session.discoverServices()
+            val mtu = session.requestMtu(MAX_ATT_MTU)
+            Log.d("TestRunner", "$mtu")
             session.writeWithResponse(
-                BluetoothDevicesViewModel.SERVICE_UUID,
-                BluetoothDevicesViewModel.CHARACTERISTIC_UUID,
-                "me perdonass??".toByteArray(StandardCharsets.UTF_8)
+                SERVICE_UUID, CHARACTERISTIC_UUID, "me perdonass??".toByteArray(UTF_8)
             )
         }
     }

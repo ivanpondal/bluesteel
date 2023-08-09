@@ -25,6 +25,8 @@ class BluetoothSession(
 
     companion object {
         private val TAG = BluetoothSession::class.simpleName
+        private const val DEFAULT_ATT_MTU = 23
+        const val MAX_ATT_MTU = 517
     }
 
     override val id: String
@@ -39,7 +41,16 @@ class BluetoothSession(
     val disconnectionEvent: SharedFlow<String> = _disconnectionEvent.asSharedFlow()
 
     private val discoveryChannel = Channel<Boolean>()
+    private val mtuRequestChannel = Channel<Int>()
     private val writeWithResponseChannel = Channel<Boolean>()
+
+    @SuppressLint("MissingPermission")
+    suspend fun requestMtu(value: Int): Int {
+        return bluetoothGatt?.let {
+            it.requestMtu(value)
+            mtuRequestChannel.receive()
+        } ?: DEFAULT_ATT_MTU
+    }
 
     @SuppressLint("MissingPermission")
     suspend fun discoverServices() {
@@ -73,6 +84,23 @@ class BluetoothSession(
     }
 
     private val gattClientCallback = object : BluetoothGattCallback() {
+        override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int) {
+            super.onMtuChanged(gatt, mtu, status)
+            when (status) {
+                BluetoothGatt.GATT_SUCCESS -> {
+                    coroutineScope.launch {
+                        mtuRequestChannel.send(mtu)
+                    }
+                }
+
+                else -> {
+                    coroutineScope.launch {
+                        mtuRequestChannel.send(DEFAULT_ATT_MTU)
+                    }
+                }
+            }
+        }
+
         override fun onCharacteristicWrite(
             gatt: BluetoothGatt?,
             characteristic: BluetoothGattCharacteristic?,
