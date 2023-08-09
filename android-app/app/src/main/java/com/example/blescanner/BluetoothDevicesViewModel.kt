@@ -4,7 +4,6 @@ import android.app.Application
 import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
-import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
@@ -123,35 +122,5 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
                 .build(),
             advertisementCallback
         )
-    }
-
-    private val gattClientCallback = object : BluetoothGattCallback() {
-        @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
-        override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
-            super.onServicesDiscovered(gatt, status)
-
-            if (status == BluetoothGatt.GATT_SUCCESS && gatt !== null) {
-                val gattService = gatt.getService(SERVICE_UUID)
-
-                gattService?.let { service ->
-                    val characteristic = service.getCharacteristic(CHARACTERISTIC_UUID)
-                    val message = "mE pERdonAs?".toByteArray(charset = Charsets.UTF_8)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        gatt.writeCharacteristic(
-                            characteristic,
-                            message,
-                            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-                        )
-                    } else {
-                        characteristic.writeType =
-                            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-                        characteristic.value = message
-                        gatt.writeCharacteristic(characteristic)
-                    }
-                }
-            } else {
-                Log.d(TAG, "discovery failed with status $status")
-            }
-        }
     }
 }
