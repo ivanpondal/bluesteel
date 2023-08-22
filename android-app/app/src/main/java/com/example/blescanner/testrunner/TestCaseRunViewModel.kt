@@ -1,16 +1,15 @@
 package com.example.blescanner.testrunner
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.blescanner.BluetoothDevicesViewModel.Companion.CHARACTERISTIC_UUID
-import com.example.blescanner.BluetoothDevicesViewModel.Companion.SERVICE_UUID
-import com.example.blescanner.model.BluetoothSession.Companion.MAX_ATT_MTU
+import com.example.blescanner.measurements.SystemStopwatch
 import com.example.blescanner.scanner.repository.ConnectedDeviceRepository
 import com.example.blescanner.testrunner.model.TestCaseId
+import com.example.blescanner.testrunner.services.TestRunner
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlin.random.Random
 
 class TestCaseRunViewModel(
     private val connectedDeviceRepository: ConnectedDeviceRepository,
@@ -18,6 +17,9 @@ class TestCaseRunViewModel(
     val devices: Set<String>
 ) :
     ViewModel() {
+
+    private val _testRunnerState = MutableStateFlow("")
+    val testRunnerState = _testRunnerState.asStateFlow()
 
     companion object {
         fun provideFactory(
@@ -33,25 +35,15 @@ class TestCaseRunViewModel(
             }
     }
 
-    private fun randomArray(size: Int): ByteArray {
-        val randomMessage = ByteArray(size)
-        Random.Default.nextBytes(randomMessage)
-        return randomMessage
-    }
-
     fun runTest() {
         val firstDevice = devices.first()
-        val session = connectedDeviceRepository.getById(firstDevice)
+        val testRunner =
+            TestRunner(connectedDeviceRepository.getById(firstDevice), SystemStopwatch())
         viewModelScope.launch {
-            session.discoverServices()
-            val mtu = session.requestMtu(MAX_ATT_MTU) - 3
-            repeat(100) {
-                val randomMessage = randomArray(mtu)
-                session.writeWithResponse(
-                    SERVICE_UUID, CHARACTERISTIC_UUID, randomMessage
-                )
-            }
-            Log.d("TestRunner", "Finished")
+            testRunner.state.collect { _testRunnerState.emit(it) }
+        }
+        viewModelScope.launch {
+            testRunner.run()
         }
     }
 }

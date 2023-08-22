@@ -18,6 +18,7 @@ import com.example.blescanner.ui.theme.BLEScannerTheme
 fun TestCaseRun(
     testCase: TestCaseId,
     selectedDevices: Set<String>,
+    testRunnerState: String
 ) {
     Column(
         modifier = Modifier
@@ -26,6 +27,8 @@ fun TestCaseRun(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("Test case: \"${testCase.displayName}\"", fontSize = 24.sp)
+
+        TestCaseRunView(testRunnerState = testRunnerState)
     }
 }
 
@@ -36,6 +39,7 @@ fun TestCaseRunPreview() {
         TestCaseRun(
             testCase = TestCaseId.SR_OW_1,
             selectedDevices = setOf(BluetoothDeviceData.sampleDevices.first().id),
+            testRunnerState = ""
         )
     }
 }

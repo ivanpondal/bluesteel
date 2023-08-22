@@ -65,7 +65,7 @@ class MainActivity : ComponentActivity() {
         private val TAG = MainActivity::class.simpleName
     }
 
-    private val bleViewModel: BluetoothDevicesViewModel by viewModels()
+    private val bleViewModel: BluetoothAdvertiserViewModel by viewModels()
     private val bluetoothManager: BluetoothManager by lazy {
         application.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
     }
@@ -278,7 +278,8 @@ class MainActivity : ComponentActivity() {
                                 }
                                 TestCaseRun(
                                     testCase = testCaseRunViewModel.testCase,
-                                    selectedDevices = testCaseRunViewModel.devices
+                                    selectedDevices = testCaseRunViewModel.devices,
+                                    testRunnerState = testCaseRunViewModel.testRunnerState.collectAsState().value
                                 )
                             }
                         }
