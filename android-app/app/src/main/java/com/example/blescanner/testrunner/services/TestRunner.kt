@@ -21,6 +21,9 @@ class TestRunner(private val session: BluetoothSession, private val stopwatch: S
     private val _state = MutableStateFlow("RUNNING $RUNNING_EMOJI")
     val state = _state.asStateFlow()
 
+    private val _packetsSent = MutableStateFlow(0)
+    val packetsSent = _packetsSent.asStateFlow()
+
     private fun randomArray(size: Int): ByteArray {
         val randomMessage = ByteArray(size)
         Random.Default.nextBytes(randomMessage)
@@ -40,6 +43,7 @@ class TestRunner(private val session: BluetoothSession, private val stopwatch: S
             stopwatch.start()
             session.writeWithResponse(SERVICE_UUID, CHARACTERISTIC_UUID, randomMessage)
             Log.i(TAG, "${it}th write with response time ${stopwatch.stop()} ms")
+            _packetsSent.emit(packetsSent.value + 1)
         }
         _state.emit("FINISHED $CHECK_EMOJI")
     }

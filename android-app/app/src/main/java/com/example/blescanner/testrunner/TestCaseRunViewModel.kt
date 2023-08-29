@@ -21,6 +21,9 @@ class TestCaseRunViewModel(
     private val _testRunnerState = MutableStateFlow("")
     val testRunnerState = _testRunnerState.asStateFlow()
 
+    private val _testRunnerPacketsSent = MutableStateFlow(0)
+    val testRunnerPacketsSent = _testRunnerPacketsSent.asStateFlow()
+
     companion object {
         fun provideFactory(
             connectedDeviceRepository: ConnectedDeviceRepository,
@@ -41,6 +44,9 @@ class TestCaseRunViewModel(
             TestRunner(connectedDeviceRepository.getById(firstDevice), SystemStopwatch())
         viewModelScope.launch {
             testRunner.state.collect { _testRunnerState.emit(it) }
+        }
+        viewModelScope.launch {
+            testRunner.packetsSent.collect { _testRunnerPacketsSent.emit(it) }
         }
         viewModelScope.launch {
             testRunner.run()
