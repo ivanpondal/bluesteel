@@ -280,7 +280,8 @@ class MainActivity : ComponentActivity() {
                                     testCase = testCaseRunViewModel.testCase,
                                     selectedDevices = testCaseRunViewModel.devices,
                                     testRunnerState = testCaseRunViewModel.testRunnerState.collectAsState().value,
-                                    testRunnerPacketsSent = testCaseRunViewModel.testRunnerPacketsSent.collectAsState().value
+                                    testRunnerPacketsSent = testCaseRunViewModel.testRunnerPacketsSent.collectAsState().value,
+                                    testRunnerBytesPerSecond = testCaseRunViewModel.testRunnerBytesPerSecond.collectAsState().value
                                 )
                             }
                         }

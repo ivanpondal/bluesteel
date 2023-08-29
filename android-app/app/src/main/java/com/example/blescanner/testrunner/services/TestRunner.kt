@@ -24,6 +24,9 @@ class TestRunner(private val session: BluetoothSession, private val stopwatch: S
     private val _packetsSent = MutableStateFlow(0)
     val packetsSent = _packetsSent.asStateFlow()
 
+    private val _bytesPerSecond = MutableStateFlow(0f)
+    val bytesPerSecond = _bytesPerSecond.asStateFlow()
+
     private fun randomArray(size: Int): ByteArray {
         val randomMessage = ByteArray(size)
         Random.Default.nextBytes(randomMessage)
@@ -38,11 +41,20 @@ class TestRunner(private val session: BluetoothSession, private val stopwatch: S
         stopwatch.start()
         val mtu = session.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
         Log.i(TAG, "mtu $mtu bytes, request time ${stopwatch.stop()} ms")
+        var totalTimeSendingInMs = 0L
+        var totalBytesSent = 0
         repeat(100) {
             val randomMessage = randomArray(mtu)
             stopwatch.start()
             session.writeWithResponse(SERVICE_UUID, CHARACTERISTIC_UUID, randomMessage)
-            Log.i(TAG, "${it}th write with response time ${stopwatch.stop()} ms")
+            val timeSendingInMs = stopwatch.stop()
+
+            Log.i(TAG, "${it}th write with response time $timeSendingInMs ms")
+
+            totalTimeSendingInMs += timeSendingInMs
+            totalBytesSent += randomMessage.size
+            _bytesPerSecond.emit(1000f * totalBytesSent / totalTimeSendingInMs)
+
             _packetsSent.emit(packetsSent.value + 1)
         }
         _state.emit("FINISHED $CHECK_EMOJI")

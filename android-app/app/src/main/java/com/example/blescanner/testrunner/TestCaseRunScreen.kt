@@ -20,6 +20,7 @@ fun TestCaseRun(
     selectedDevices: Set<String>,
     testRunnerState: String,
     testRunnerPacketsSent: Int,
+    testRunnerBytesPerSecond: Float,
 ) {
     Column(
         modifier = Modifier
@@ -32,7 +33,8 @@ fun TestCaseRun(
         TestCaseRunRow(
             testRunnerState = testRunnerState,
             selectedDevices.first(),
-            testRunnerPacketsSent
+            testRunnerPacketsSent,
+            testRunnerBytesPerSecond
         )
     }
 }
@@ -45,7 +47,8 @@ fun TestCaseRunPreview() {
             testCase = TestCaseId.SR_OW_1,
             selectedDevices = setOf(BluetoothDeviceData.sampleDevices.first().id),
             testRunnerState = "",
-            42
+            42,
+            2034f
         )
     }
 }
