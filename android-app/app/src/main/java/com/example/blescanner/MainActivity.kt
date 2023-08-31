@@ -281,7 +281,9 @@ class MainActivity : ComponentActivity() {
                                     selectedDevices = testCaseRunViewModel.devices,
                                     testRunnerState = testCaseRunViewModel.testRunnerState.collectAsState().value,
                                     testRunnerPacketsSent = testCaseRunViewModel.testRunnerPacketsSent.collectAsState().value,
-                                    testRunnerBytesPerSecond = testCaseRunViewModel.testRunnerBytesPerSecond.collectAsState().value
+                                    testRunnerBytesPerSecond = testCaseRunViewModel.testRunnerBytesPerSecond.collectAsState().value,
+                                    onCopyResults = {},
+                                    onRestart = { testCaseRunViewModel.runTest() },
                                 )
                             }
                         }
