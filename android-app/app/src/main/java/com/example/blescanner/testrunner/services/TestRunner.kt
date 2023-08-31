@@ -27,20 +27,31 @@ class TestRunner(private val session: BluetoothSession, private val stopwatch: S
     private val _bytesPerSecond = MutableStateFlow(0f)
     val bytesPerSecond = _bytesPerSecond.asStateFlow()
 
+    var consoleOutput: String = ""
+        private set
+
     private fun randomArray(size: Int): ByteArray {
         val randomMessage = ByteArray(size)
         Random.Default.nextBytes(randomMessage)
         return randomMessage
     }
 
+    private fun consoleOutput(message: String, stringBuilder: StringBuilder) {
+        Log.i(TAG, message)
+        stringBuilder.appendLine(message)
+    }
+
     suspend fun run() {
+        val outputBuilder = StringBuilder()
+
         stopwatch.start()
         session.discoverServices()
-        Log.i(TAG, "service discovery time ${stopwatch.stop()} ms")
+
+        consoleOutput("service discovery time ${stopwatch.stop()} ms", outputBuilder)
 
         stopwatch.start()
         val mtu = session.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
-        Log.i(TAG, "mtu $mtu bytes, request time ${stopwatch.stop()} ms")
+        consoleOutput("mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder)
         var totalTimeSendingInMs = 0L
         var totalBytesSent = 0
         repeat(100) {
@@ -49,7 +60,7 @@ class TestRunner(private val session: BluetoothSession, private val stopwatch: S
             session.writeWithResponse(SERVICE_UUID, CHARACTERISTIC_UUID, randomMessage)
             val timeSendingInMs = stopwatch.stop()
 
-            Log.i(TAG, "${it}th write with response time $timeSendingInMs ms")
+            consoleOutput("${it}th write with response time $timeSendingInMs ms", outputBuilder)
 
             totalTimeSendingInMs += timeSendingInMs
             totalBytesSent += randomMessage.size
@@ -58,5 +69,7 @@ class TestRunner(private val session: BluetoothSession, private val stopwatch: S
             _packetsSent.emit(packetsSent.value + 1)
         }
         _state.emit("FINISHED $CHECK_EMOJI")
+
+        consoleOutput = outputBuilder.toString()
     }
 }

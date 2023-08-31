@@ -3,6 +3,9 @@ package com.example.blescanner
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -282,7 +285,18 @@ class MainActivity : ComponentActivity() {
                                     testRunnerState = testCaseRunViewModel.testRunnerState.collectAsState().value,
                                     testRunnerPacketsSent = testCaseRunViewModel.testRunnerPacketsSent.collectAsState().value,
                                     testRunnerBytesPerSecond = testCaseRunViewModel.testRunnerBytesPerSecond.collectAsState().value,
-                                    onCopyResults = {},
+                                    onCopyResults = {
+                                        val clipboard =
+                                            getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        val clip: ClipData =
+                                            ClipData.newPlainText(
+                                                "$testCase result",
+
+                                                testCaseRunViewModel.testResult
+                                            )
+                                        clipboard.setPrimaryClip(clip)
+
+                                    },
                                     onRestart = { testCaseRunViewModel.runTest() },
                                 )
                             }

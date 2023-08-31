@@ -18,6 +18,9 @@ class TestCaseRunViewModel(
 ) :
     ViewModel() {
 
+    var testResult: String = ""
+        private set
+
     private val _testRunnerState = MutableStateFlow("")
     val testRunnerState = _testRunnerState.asStateFlow()
 
@@ -58,6 +61,7 @@ class TestCaseRunViewModel(
 
         viewModelScope.launch {
             testRunner.run()
+            testResult = testRunner.consoleOutput
         }
     }
 }
