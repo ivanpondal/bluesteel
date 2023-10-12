@@ -228,13 +228,15 @@ class MainActivity : ComponentActivity() {
                                     availableTestCases = TestCaseId.values().toList(),
                                     onTestCaseSelection = testCaseListViewModel::setTestCase,
                                     onClickRun = {
-                                        navController.navigate(
-                                            "testrunner/${testCaseListViewModel.selectedTestCase.value}?devices=${
-                                                testCaseListViewModel.selectedDevices.value.joinToString(
-                                                    ","
-                                                )
-                                            }"
-                                        )
+                                        if (testCaseListViewModel.selectedDevices.value.isNotEmpty()) {
+                                            navController.navigate(
+                                                "testrunner/${testCaseListViewModel.selectedTestCase.value}?devices=${
+                                                    testCaseListViewModel.selectedDevices.value.joinToString(
+                                                        ","
+                                                    )
+                                                }"
+                                            )
+                                        }
                                     }
                                 )
                             }

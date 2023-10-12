@@ -7,6 +7,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -16,6 +20,8 @@ import com.example.blescanner.model.BluetoothDeviceData
 import com.example.blescanner.testrunner.model.TestCaseId
 import com.example.blescanner.testrunner.services.TestRunner.Companion.RUNNING_EMOJI
 import com.example.blescanner.ui.theme.BLEScannerTheme
+
+val COPY_RESULTS_TEXT = "Copy results"
 
 @Composable
 fun TestCaseRun(
@@ -27,6 +33,9 @@ fun TestCaseRun(
     onCopyResults: () -> Unit,
     onRestart: () -> Unit
 ) {
+    var copyResultsText by remember {
+        mutableStateOf(COPY_RESULTS_TEXT)
+    }
     Column(
         modifier = Modifier
             .padding(12.dp)
@@ -48,10 +57,19 @@ fun TestCaseRun(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        Button(onClick = onCopyResults, enabled = testRunnerState != "RUNNING $RUNNING_EMOJI") {
-            Text("Copy results", fontSize = 16.sp)
+        Button(
+            onClick = {
+                onCopyResults()
+                copyResultsText = "Copied!"
+            },
+            enabled = testRunnerState != "RUNNING $RUNNING_EMOJI"
+        ) {
+            Text(copyResultsText, fontSize = 16.sp)
         }
-        Button(onClick = onRestart, enabled = testRunnerState != "RUNNING $RUNNING_EMOJI") {
+        Button(onClick = {
+            copyResultsText = COPY_RESULTS_TEXT
+            onRestart()
+        }, enabled = testRunnerState != "RUNNING $RUNNING_EMOJI") {
             Text("Restart", fontSize = 16.sp)
         }
     }
