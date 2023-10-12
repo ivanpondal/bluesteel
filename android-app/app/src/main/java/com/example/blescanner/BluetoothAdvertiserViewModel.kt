@@ -8,6 +8,8 @@ import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.AndroidViewModel
+import com.example.blescanner.scanner.service.BluetoothConstants.CHARACTERISTIC_UUID
+import com.example.blescanner.scanner.service.BluetoothConstants.SERVICE_UUID
 import kotlinx.coroutines.flow.*
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -16,9 +18,6 @@ import java.util.*
 class BluetoothAdvertiserViewModel(application: Application) : AndroidViewModel(application) {
     companion object {
         private val TAG = BluetoothAdvertiserViewModel::class.simpleName
-
-        val SERVICE_UUID = UUID.fromString("FE4B1073-17BB-4982-955F-28702F277F19")
-        val CHARACTERISTIC_UUID = UUID.fromString("A5C46D55-280D-4B9E-8335-BCA4C0977BDB")
     }
 
     private val bluetoothManager: BluetoothManager by lazy {

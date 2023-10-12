@@ -1,10 +1,10 @@
 package com.example.blescanner.testrunner.services
 
 import android.util.Log
-import com.example.blescanner.BluetoothAdvertiserViewModel.Companion.CHARACTERISTIC_UUID
-import com.example.blescanner.BluetoothAdvertiserViewModel.Companion.SERVICE_UUID
 import com.example.blescanner.measurements.Stopwatch
 import com.example.blescanner.model.BluetoothSession
+import com.example.blescanner.scanner.service.BluetoothConstants.CHARACTERISTIC_UUID
+import com.example.blescanner.scanner.service.BluetoothConstants.SERVICE_UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.random.Random
