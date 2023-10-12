@@ -4,22 +4,22 @@ import android.app.Application
 import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
-import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
+import com.example.blescanner.scanner.service.BluetoothConstants.CHARACTERISTIC_UUID
+import com.example.blescanner.scanner.service.BluetoothConstants.SERVICE_UUID
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import java.nio.charset.StandardCharsets
 import java.util.*
 
 
-private val SERVICE_UUID = UUID.fromString("FE4B1073-17BB-4982-955F-28702F277F19")
-private val CHARACTERISTIC_UUID = UUID.fromString("A5C46D55-280D-4B9E-8335-BCA4C0977BDB")
+class BluetoothAdvertiserViewModel(application: Application) : AndroidViewModel(application) {
+    companion object {
+        private val TAG = BluetoothAdvertiserViewModel::class.simpleName
+    }
 
-class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(application) {
     private val bluetoothManager: BluetoothManager by lazy {
         application.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     }
@@ -28,14 +28,7 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
         bluetoothManager.adapter
     }
 
-    private val connectedGatts: MutableMap<String, BluetoothGatt> =
-        mutableMapOf()
-
-    private val _deviceConnectionEvent: MutableSharedFlow<BluetoothGatt> = MutableSharedFlow()
-    val deviceConnectionEvent: SharedFlow<BluetoothGatt> = _deviceConnectionEvent
-
     private var gattServer: BluetoothGattServer? = null
-
     val bluetoothEnabled = bluetoothAdapter.isEnabled
 
     private val advertisementCallback = object : AdvertiseCallback() {
@@ -128,86 +121,5 @@ class BluetoothDevicesViewModel(application: Application) : AndroidViewModel(app
                 .build(),
             advertisementCallback
         )
-    }
-
-    private val gattClientCallback = object : BluetoothGattCallback() {
-        @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
-        override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
-            super.onConnectionStateChange(gatt, status, newState)
-
-            val gattStatus = if (BluetoothGatt.GATT_SUCCESS == status) {
-                "success"
-            } else if (BluetoothGatt.GATT_FAILURE == status) {
-                "failure"
-            } else {
-                "unknown $status"
-            }
-
-            val state = if (BluetoothGatt.STATE_CONNECTED == newState) {
-                "connected"
-            } else if (BluetoothGatt.STATE_CONNECTING == newState) {
-                "connecting"
-            } else if (BluetoothGatt.STATE_DISCONNECTED == newState) {
-                "disconnected"
-            } else {
-                "unknown $newState"
-            }
-
-            Log.d(TAG, "connection state change, status: $gattStatus, state: $state")
-
-            if (gattStatus == "success" && state == "connected" && gatt !== null) {
-                connectedGatts[gatt.device.address] = gatt
-                viewModelScope.launch {
-                    _deviceConnectionEvent.emit(gatt)
-                }
-//                Will do discovery on a separate method included when testing
-//                gatt.discoverServices()
-            } else {
-                gatt?.close()
-            }
-        }
-
-        @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
-        override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
-            super.onServicesDiscovered(gatt, status)
-
-            if (status == BluetoothGatt.GATT_SUCCESS && gatt !== null) {
-                val gattService = gatt.getService(SERVICE_UUID)
-
-                gattService?.let { service ->
-                    val characteristic = service.getCharacteristic(CHARACTERISTIC_UUID)
-                    val message = "mE pERdonAs?".toByteArray(charset = Charsets.UTF_8)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        gatt.writeCharacteristic(
-                            characteristic,
-                            message,
-                            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-                        )
-                    } else {
-                        characteristic.writeType =
-                            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-                        characteristic.value = message
-                        gatt.writeCharacteristic(characteristic)
-                    }
-                }
-            } else {
-                Log.d(TAG, "discovery failed with status $status")
-            }
-        }
-    }
-
-    @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
-    fun connectGatt(id: String) {
-        val bluetoothDevice = bluetoothAdapter.getRemoteDevice(id)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            bluetoothDevice.connectGatt(
-                getApplication(),
-                false,
-                gattClientCallback,
-                android.bluetooth.BluetoothDevice.TRANSPORT_LE
-            )
-        } else {
-            bluetoothDevice.connectGatt(getApplication(), false, gattClientCallback)
-        }
     }
 }

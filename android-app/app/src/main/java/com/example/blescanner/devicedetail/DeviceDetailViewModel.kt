@@ -3,7 +3,7 @@ package com.example.blescanner.devicedetail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.blescanner.model.BluetoothScannedDevice
+import com.example.blescanner.model.BluetoothDeviceAdvertisement
 import com.example.blescanner.scanner.repository.ScannedDeviceRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.stateIn
 
 class DeviceDetailViewModel(private val scannedDeviceRepository: ScannedDeviceRepository) :
     ViewModel() {
-    fun getScannedDeviceById(id: String): StateFlow<BluetoothScannedDevice> {
+    fun getScannedDeviceById(id: String): StateFlow<BluetoothDeviceAdvertisement> {
         return scannedDeviceRepository.streamById(id).stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(),

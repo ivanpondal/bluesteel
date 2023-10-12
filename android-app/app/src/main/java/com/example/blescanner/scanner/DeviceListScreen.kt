@@ -27,12 +27,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.blescanner.model.BluetoothDeviceData
-import com.example.blescanner.model.BluetoothScannedDevice
+import com.example.blescanner.model.BluetoothDeviceAdvertisement
 import com.example.blescanner.ui.theme.BLEScannerTheme
 
 @Composable
 fun DeviceList(
-    devices: List<BluetoothScannedDevice>, onNavigateToDevice: (deviceId: String) -> Unit,
+    devices: List<BluetoothDeviceAdvertisement>, onNavigateToDevice: (deviceId: String) -> Unit,
 ) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -53,7 +53,7 @@ fun DeviceListPreview() {
 }
 
 @Composable
-fun DeviceRow(device: BluetoothScannedDevice, onNavigateToDevice: (deviceId: String) -> Unit) {
+fun DeviceRow(device: BluetoothDeviceAdvertisement, onNavigateToDevice: (deviceId: String) -> Unit) {
     Card(modifier = Modifier.clickable { onNavigateToDevice(device.id) }) {
         Column(
             modifier = Modifier.padding(10.dp)
@@ -79,7 +79,7 @@ fun DeviceRow(device: BluetoothScannedDevice, onNavigateToDevice: (deviceId: Str
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = device.advertisements.size.toString(),
+                        text = device.services.size.toString(),
                         fontSize = 10.sp,
                         color = MaterialTheme.colors.onPrimary,
                         textAlign = TextAlign.Center,
