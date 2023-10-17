@@ -287,6 +287,7 @@ class MainActivity : ComponentActivity() {
                                     testRunnerState = testCaseRunViewModel.testRunnerState.collectAsState().value,
                                     testRunnerPacketsSent = testCaseRunViewModel.testRunnerPacketsSent.collectAsState().value,
                                     testRunnerBytesPerSecond = testCaseRunViewModel.testRunnerBytesPerSecond.collectAsState().value,
+                                    testRunnerMtu = testCaseRunViewModel.testRunnerMtu.collectAsState().value,
                                     onCopyResults = {
                                         val clipboard =
                                             getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager

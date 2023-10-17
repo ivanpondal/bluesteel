@@ -30,6 +30,9 @@ class TestCaseRunViewModel(
     private val _testRunnerBytesPerSecond = MutableStateFlow(0f)
     val testRunnerBytesPerSecond = _testRunnerBytesPerSecond.asStateFlow()
 
+    private val _testRunnerMtu = MutableStateFlow(0)
+    val testRunnerMtu = _testRunnerMtu.asStateFlow()
+
     companion object {
         fun provideFactory(
             connectedDeviceRepository: ConnectedDeviceRepository,
@@ -57,6 +60,10 @@ class TestCaseRunViewModel(
         }
         viewModelScope.launch {
             testRunner.bytesPerSecond.collect { _testRunnerBytesPerSecond.emit(it) }
+        }
+
+        viewModelScope.launch {
+            testRunner.mtu.collect { _testRunnerMtu.emit(it) }
         }
 
         viewModelScope.launch {
