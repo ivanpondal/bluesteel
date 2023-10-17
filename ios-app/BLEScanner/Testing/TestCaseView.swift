@@ -23,6 +23,8 @@ struct TestCaseView: View {
     @State
     private var testRunnerBytesSentPerSec: Float = 0
     @State
+    private var testRunnerMtu: Int = 0
+    @State
     private var cancellables: Set<AnyCancellable> = Set<AnyCancellable>()
     @State
     private var copyButtonText = COPY_RESULTS_TEXT
@@ -42,6 +44,9 @@ struct TestCaseView: View {
                 .throttle(for: .seconds(0.5), scheduler: RunLoop.main, latest: true)
                 .sink(receiveValue: { testRunnerBytesSentPerSec = $0 })
                 .store(in: &cancellables)
+            testRunner.$mtu
+                .sink(receiveValue: {testRunnerMtu = $0})
+                .store(in: &cancellables)
             await testRunner.run()
             testRunOutput = testRunner.consoleOutput
         }
@@ -54,7 +59,7 @@ struct TestCaseView: View {
                 .padding()
                 .frame(maxWidth: .infinity)
             List(activeTestCase.devices) { connectedDevice in
-                TestCaseRunView(testDevice: connectedDevice, testRunnerState: testRunnerState, packetsSent: testRunnerPacketsSent, bytesPerSecond: testRunnerBytesSentPerSec)
+                TestCaseRunView(testDevice: connectedDevice, testRunnerState: testRunnerState, packetsSent: testRunnerPacketsSent, bytesPerSecond: testRunnerBytesSentPerSec, mtu: testRunnerMtu)
             }.listStyle(.grouped)
 
             Spacer()
