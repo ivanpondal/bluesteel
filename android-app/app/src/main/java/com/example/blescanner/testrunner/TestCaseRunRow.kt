@@ -23,7 +23,8 @@ fun TestCaseRunRow(
     testRunnerState: String,
     testDeviceId: String,
     packetsSent: Int,
-    bytesPerSecond: Float
+    bytesPerSecond: Float,
+    mtu: Int
 ) {
     Card {
         Column(
@@ -39,6 +40,7 @@ fun TestCaseRunRow(
                 Text(testDeviceId, fontSize = 14.sp)
             }
             Spacer(modifier = Modifier.height(4.dp))
+            Text("\uD83D\uDCBE mtu: $mtu bytes", fontSize = 12.sp)
             Text(
                 "⬆️ uplink: ${String.format("%.2f", bytesPerSecond / 1024)} kbytes/s",
                 fontSize = 12.sp
@@ -56,7 +58,8 @@ fun TestCaseRunViewPreview() {
             "RUNNING ${TestRunner.RUNNING_EMOJI}",
             BluetoothDeviceData.sampleDevices.first().id,
             43,
-            2044.4546f
+            2044.4546f,
+            512
         )
     }
 }

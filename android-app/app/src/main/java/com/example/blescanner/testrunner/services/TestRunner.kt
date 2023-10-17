@@ -27,6 +27,9 @@ class TestRunner(private val session: BluetoothSession, private val stopwatch: S
     private val _bytesPerSecond = MutableStateFlow(0f)
     val bytesPerSecond = _bytesPerSecond.asStateFlow()
 
+    private val _mtu = MutableStateFlow(0)
+    val mtu = _mtu.asStateFlow()
+
     var consoleOutput: String = ""
         private set
 
@@ -51,6 +54,7 @@ class TestRunner(private val session: BluetoothSession, private val stopwatch: S
 
         stopwatch.start()
         val mtu = session.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
+        _mtu.emit(mtu)
         consoleOutput("mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder)
         var totalTimeSendingInMs = 0L
         var totalBytesSent = 0

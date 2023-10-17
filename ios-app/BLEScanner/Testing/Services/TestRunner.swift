@@ -22,6 +22,8 @@ class TestRunner {
     var packetsSent: Int = 0
     @Published
     var bytesSentPerSecond: Float = 0
+    @Published
+    var mtu: Int = 0
 
     var consoleOutput: String = ""
     private static let dateFormatter: ISO8601DateFormatter = {
@@ -62,7 +64,7 @@ class TestRunner {
                 let _ = try await bluetoothRadio.discover(fromPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
                 console(print: "characteristic discovery time \(stopwatch.stop()) ms")
 
-                let mtu = try bluetoothRadio.mtu(forPeripheralId: device.id, withWriteType: .withoutResponse)
+                mtu = try bluetoothRadio.mtu(forPeripheralId: device.id, withWriteType: .withoutResponse)
                 let mtuWithResponse = try bluetoothRadio.mtu(forPeripheralId: device.id, withWriteType: .withResponse)
                 console(print: "mtu \(mtu) bytes without response")
                 console(print: "mtu \(mtuWithResponse) bytes with response")

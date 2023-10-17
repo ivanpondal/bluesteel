@@ -30,6 +30,7 @@ fun TestCaseRun(
     testRunnerState: String,
     testRunnerPacketsSent: Int,
     testRunnerBytesPerSecond: Float,
+    testRunnerMtu: Int,
     onCopyResults: () -> Unit,
     onRestart: () -> Unit
 ) {
@@ -52,7 +53,8 @@ fun TestCaseRun(
             testRunnerState = testRunnerState,
             selectedDevices.first(),
             testRunnerPacketsSent,
-            testRunnerBytesPerSecond
+            testRunnerBytesPerSecond,
+            testRunnerMtu
         )
 
         Spacer(modifier = Modifier.weight(1f))
@@ -85,6 +87,7 @@ fun TestCaseRunPreview() {
             testRunnerState = "RUNNING $RUNNING_EMOJI",
             42,
             2034f,
+            512,
             {
                 // do nothing
             },
