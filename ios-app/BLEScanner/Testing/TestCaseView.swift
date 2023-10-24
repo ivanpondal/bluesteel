@@ -73,9 +73,7 @@ struct TestCaseView: View {
                     await runTest()
                 }
             }).disabled(testRunnerState == "RUNNING 🏃‍♂️").padding()
-        }.navigationBarBackButtonHidden(testRunnerState != "FINISHED ☑️").task {
-            await runTest()
-        }
+        }.navigationBarBackButtonHidden(testRunnerState != "FINISHED ☑️").task { await runTest() }
     }
 }
 

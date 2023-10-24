@@ -10,6 +10,8 @@ import SwiftUI
 @main
 struct BLEScannerApp: App {
 
+    @Environment(\.scenePhase) var scenePhase
+
     var bluetoothRadio: BluetoothRadio = BluetoothRadio()
 
     var body: some Scene {
@@ -23,6 +25,15 @@ struct BLEScannerApp: App {
                     .tabItem{
                         Label("Connections", systemImage: "link")
                     }
+            }
+        }
+        .onChange(of: scenePhase) { newPhase in
+            if newPhase == .active {
+                print("Active")
+            } else if newPhase == .inactive {
+                print("Inactive")
+            } else if newPhase == .background {
+                print("Background")
             }
         }
     }
