@@ -14,6 +14,8 @@ struct TestCaseListView: View {
     @State private var selectedDevices: [UUID: Bool] = [:]
     @State private var selectedTestCase: TestCaseId = TestCaseId.SR_OW_1
 
+    @State private var selectedRole: TestCaseRole = .SENDER
+
     func NavigationViewWrapper(@ViewBuilder content: () -> some View) -> some View {
         if #available(iOS 16, *) {
             return NavigationStack(root: content)
@@ -25,12 +27,24 @@ struct TestCaseListView: View {
     var body: some View {
         NavigationViewWrapper {
             VStack {
-                List(connectedDevices) { connectedDevice in
-                    Toggle(connectedDevice.id.uuidString,
-                           isOn: .init(
-                            get: { selectedDevices[connectedDevice.id, default: false] },
-                            set: { selectedDevices[connectedDevice.id] = $0 }))
-                    .toggleStyle(.switch)
+                switch selectedTestCase {
+                case .SR_OW_1:
+                    List(connectedDevices) { connectedDevice in
+                        Toggle(connectedDevice.id.uuidString,
+                               isOn: .init(
+                                get: { selectedDevices[connectedDevice.id, default: false] },
+                                set: { selectedDevices[connectedDevice.id] = $0 }))
+                        .toggleStyle(.switch)
+                    }
+                case .SR_OW_2:
+                    HStack(){
+                        Text("Role")
+                        Divider()
+                        Picker("", selection: $selectedRole){
+                            Text("Sender").tag(TestCaseRole.SENDER)
+                            Text("Receiver").tag(TestCaseRole.RECEIVER)
+                        }.pickerStyle(.menu)
+                    }.fixedSize().padding(.top, 24)
                 }
                 Spacer()
                 HStack{
@@ -43,7 +57,9 @@ struct TestCaseListView: View {
                     }.pickerStyle(.menu)
                 }.fixedSize()
                 NavigationLink(destination: TestCaseView(activeTestCase: TestCase(
-                    id: selectedTestCase, devices: connectedDevices.filter({selectedDevices[$0.id] == true})), bluetoothRadio: bluetoothRadio
+                    id: selectedTestCase,
+                    role: selectedRole,
+                    device: connectedDevices.filter({selectedDevices[$0.id] == true}).first),bluetoothRadio: bluetoothRadio
                 )) {
                     Button("Run", action: {}).allowsHitTesting(false)
                 }
