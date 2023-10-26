@@ -34,7 +34,7 @@ struct TestCaseView: View {
     private func runTest() async {
         guard let testCaseDevice = activeTestCase.device else { return }
         copyButtonText = TestCaseView.COPY_RESULTS_TEXT
-        let testRunner = TestRunner(bluetoothRadio: bluetoothRadio, testCase: activeTestCase, device: testCaseDevice)
+        let testRunner = TestRunner(bluetoothRadio: bluetoothRadio, testCase: activeTestCase, targetDevice: testCaseDevice)
         testRunner.$state.sink(receiveValue: { testRunnerState = $0 }).store(in: &cancellables)
         testRunner.$packetsSent
             .throttle(for: .seconds(0.5), scheduler: RunLoop.main, latest: true)

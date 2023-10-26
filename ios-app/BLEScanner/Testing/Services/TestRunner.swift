@@ -10,7 +10,7 @@ import Foundation
 class TestRunner {
     let bluetoothRadio: BluetoothRadio
     let testCase: TestCase
-    let device: Device
+    let targetDevice: Device
     var stopwatch: Stopwatch
 
     private var totalBytesSent: Int = 0
@@ -32,10 +32,10 @@ class TestRunner {
         return formatter
     }()
 
-    init(bluetoothRadio: BluetoothRadio, testCase: TestCase, device: Device) {
+    init(bluetoothRadio: BluetoothRadio, testCase: TestCase, targetDevice: Device) {
         self.bluetoothRadio = bluetoothRadio
         self.testCase = testCase
-        self.device = device
+        self.targetDevice = targetDevice
         if #available(iOS 16, *) {
             self.stopwatch = ContinuousClockStopwatch()
         } else {
@@ -55,17 +55,18 @@ class TestRunner {
 
     func run() async {
         do {
-            if (testCase.id == TestCaseId.SR_OW_1){
+            switch testCase.id{
+            case .SR_OW_1:
                 stopwatch.start()
-                let _ = try await bluetoothRadio.discover(fromPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID)
+                let _ = try await bluetoothRadio.discover(fromPeripheralWithId: targetDevice.id, serviceId: BluetoothRadio.serviceUUID)
                 console(print: "service discovery time \(stopwatch.stop()) ms")
 
                 stopwatch.start()
-                let _ = try await bluetoothRadio.discover(fromPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
+                let _ = try await bluetoothRadio.discover(fromPeripheralWithId: targetDevice.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
                 console(print: "characteristic discovery time \(stopwatch.stop()) ms")
 
-                mtu = try bluetoothRadio.mtu(forPeripheralId: device.id, withWriteType: .withoutResponse)
-                let mtuWithResponse = try bluetoothRadio.mtu(forPeripheralId: device.id, withWriteType: .withResponse)
+                mtu = try bluetoothRadio.mtu(forPeripheralId: targetDevice.id, withWriteType: .withoutResponse)
+                let mtuWithResponse = try bluetoothRadio.mtu(forPeripheralId: targetDevice.id, withWriteType: .withResponse)
                 console(print: "mtu \(mtu) bytes without response")
                 console(print: "mtu \(mtuWithResponse) bytes with response")
 
@@ -75,7 +76,7 @@ class TestRunner {
                     console(print: "\(i)th random bytes generation time \(stopwatch.stop()) ms")
 
                     stopwatch.start()
-                    let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: device.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, data: data)
+                    let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: targetDevice.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, data: data)
                     let sendTimeInMs = stopwatch.stop()
                     totalTimeSendingInMs += sendTimeInMs
                     totalBytesSent += data.count
@@ -85,6 +86,10 @@ class TestRunner {
                     console(print: "\(i)th write with response time \(sendTimeInMs) ms")
                 }
                 state = "FINISHED ☑️"
+            case .SR_OW_2:
+                stopwatch.start()
+
+                console(print: "target device discovery time \(stopwatch.stop()) ms")
             }
         } catch {
             console(print: "something went wrong: \(error)")
