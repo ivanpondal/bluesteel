@@ -52,18 +52,20 @@ struct TestCaseListView: View {
                     Divider()
                     Picker("", selection: $selectedTestCase){
                         ForEach(TestCaseId.allCases, id: \.self) {
-                            Text($0.displayName())
+                            Text($0.displayName()).tag($0)
                         }
                     }.pickerStyle(.menu)
                 }.fixedSize()
                 NavigationLink(destination: TestCaseView(activeTestCase: TestCase(
                     id: selectedTestCase,
-                    role: selectedRole,
-                    device: connectedDevices.filter({selectedDevices[$0.id] == true}).first),bluetoothRadio: bluetoothRadio
+                    role: selectedRole), bluetoothRadio: bluetoothRadio, targetDevice: connectedDevices.filter({selectedDevices[$0.id] == true}).first
                 )) {
                     Button("Run", action: {}).allowsHitTesting(false)
                 }
             }
+        }
+        .onAppear {
+            bluetoothRadio.stopScan()
         }
         // Use connection/disconnection events to make it easier to keep track of selected devices
         .onReceive(bluetoothRadio.connectionEventSubject

@@ -15,6 +15,7 @@ struct TestCaseView: View {
 
     var activeTestCase: TestCase
     var bluetoothRadio: BluetoothRadio
+    var targetDevice: Device?
 
     @State
     private var testRunnerState: String = "N/A"
@@ -32,9 +33,8 @@ struct TestCaseView: View {
     private var testRunOutput: String = ""
 
     private func runTest() async {
-        guard let testCaseDevice = activeTestCase.device else { return }
         copyButtonText = TestCaseView.COPY_RESULTS_TEXT
-        let testRunner = TestRunner(bluetoothRadio: bluetoothRadio, testCase: activeTestCase, targetDevice: testCaseDevice)
+        let testRunner = TestRunner(bluetoothRadio: bluetoothRadio, testCase: activeTestCase, targetDevice: targetDevice)
         testRunner.$state.sink(receiveValue: { testRunnerState = $0 }).store(in: &cancellables)
         testRunner.$packetsSent
             .throttle(for: .seconds(0.5), scheduler: RunLoop.main, latest: true)
@@ -57,7 +57,7 @@ struct TestCaseView: View {
                 .font(.title)
                 .padding()
                 .frame(maxWidth: .infinity)
-            List(activeTestCase.device != nil ? [activeTestCase.device!] : []) { connectedDevice in
+            List(targetDevice != nil ? [targetDevice!] : []) { connectedDevice in
                 TestCaseRunView(testDevice: connectedDevice,
                                 testRunnerState: testRunnerState,
                                 packetsSent: testRunnerPacketsSent,

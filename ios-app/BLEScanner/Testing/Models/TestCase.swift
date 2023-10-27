@@ -25,12 +25,11 @@ enum TestCaseRole : String, CaseIterable {
 struct TestCase : Identifiable, Equatable {
     let id : TestCaseId
     let role: TestCaseRole
-    let device: Device?
 
 }
 
 extension TestCase {
     static var sampleData: [TestCase] {
-        [TestCase(id: .SR_OW_1, role: TestCaseRole.SENDER, device: Device.sampleData.first)]
+        [TestCase(id: .SR_OW_1, role: TestCaseRole.SENDER)]
     }
 }
