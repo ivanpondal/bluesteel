@@ -102,8 +102,6 @@ class TestRunner {
                 let _ = try await bluetoothRadio.discover(fromPeripheralWithId: connectedPeripheral.identifier, serviceId: BluetoothRadio.serviceUUID)
                 console(print: "service discovery time \(stopwatch.stop()) ms")
 
-                print(connectedPeripheral.services)
-
                 stopwatch.start()
                 let _ = try await bluetoothRadio.discover(fromPeripheralWithId: connectedPeripheral.identifier, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
                 console(print: "characteristic discovery time \(stopwatch.stop()) ms")
