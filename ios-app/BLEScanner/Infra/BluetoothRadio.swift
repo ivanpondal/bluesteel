@@ -48,7 +48,9 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
         centralManager?.stopScan()
     }
 
-    func disconnect(fromPeripheral peripheral: CBPeripheral) {
+    func disconnect(fromPeripheralWithId peripheralId: UUID) throws {
+        let peripheral = try peripheral(withId: peripheralId)
+
         centralManager?.cancelPeripheralConnection(peripheral)
     }
 
@@ -103,7 +105,9 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
         })
     }
 
-    func connect(toPeripheral peripheral: CBPeripheral) async -> CBPeripheral {
+    func connect(toPeripheralWithId peripheralId: UUID) async throws -> CBPeripheral {
+        let peripheral = try peripheral(withId: peripheralId)
+
         return await withCheckedContinuation({continuation in
             centralManager?.connect(peripheral)
             peripheralConnectionContinuation = continuation

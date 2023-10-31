@@ -95,7 +95,7 @@ class TestRunner {
                 console(print: "target device discovery time \(stopwatch.stop()) ms")
 
                 stopwatch.start()
-                let connectedPeripheral = await bluetoothRadio.connect(toPeripheral: targetPeripheral)
+                let connectedPeripheral = try await bluetoothRadio.connect(toPeripheralWithId: targetPeripheral.identifier)
                 console(print: "target device discovery time \(stopwatch.stop()) ms")
 
                 stopwatch.start()
@@ -127,7 +127,7 @@ class TestRunner {
                     console(print: "\(i)th write with response time \(sendTimeInMs) ms")
                 }
 
-                bluetoothRadio.disconnect(fromPeripheral: connectedPeripheral)
+                try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
                 state = "FINISHED ☑️"
             }
         } catch {
