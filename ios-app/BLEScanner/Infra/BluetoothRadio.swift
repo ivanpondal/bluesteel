@@ -32,6 +32,9 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
     var connectionEventSubject: PassthroughSubject<CBPeripheral, Never> = .init()
     var disconnectionEventSubject: PassthroughSubject<CBPeripheral, Never> = .init()
 
+    var peripheralDiscoveryContinuation: CheckedContinuation<CBPeripheral, Never>? = nil
+    var peripheralConnectionContinuation: CheckedContinuation<CBPeripheral, Never>? = nil
+
     var serviceDiscoveryContinuation: CheckedContinuation<CBPeripheral, Error>? = nil
     var characteristicDiscoveryContinuation: CheckedContinuation<CBPeripheral, Error>? = nil
     var writeWithResponseContinuation: CheckedContinuation<Bool, Error>? = nil
@@ -39,6 +42,16 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
     func start() {
         centralManager = CBCentralManager(delegate: self, queue: .global(qos: .utility), options: [CBCentralManagerOptionShowPowerAlertKey: true])
         peripheralManager = CBPeripheralManager(delegate: self, queue: .global(qos: .utility), options: [CBPeripheralManagerOptionShowPowerAlertKey: true])
+    }
+
+    func stopScan() {
+        centralManager?.stopScan()
+    }
+
+    func disconnect(fromPeripheralWithId peripheralId: UUID) throws {
+        let peripheral = try peripheral(withId: peripheralId)
+
+        centralManager?.cancelPeripheralConnection(peripheral)
     }
 
     private func peripheral(withId peripheralUUID: UUID) throws -> CBPeripheral {
@@ -62,6 +75,13 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
         }
     }
 
+    func discover(peripheralWithService serviceId: CBUUID) async -> CBPeripheral {
+        return await withCheckedContinuation({continuation in
+            centralManager?.scanForPeripherals(withServices: [serviceId])
+            peripheralDiscoveryContinuation = continuation
+        })
+    }
+
     func discover(fromPeripheralWithId peripheralId: UUID, serviceId: CBUUID) async throws -> CBPeripheral {
         let peripheral = try peripheral(withId: peripheralId)
 
@@ -82,6 +102,15 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
 
             peripheral.discoverCharacteristics([characteristicId], for: service)
             characteristicDiscoveryContinuation = continuation
+        })
+    }
+
+    func connect(toPeripheralWithId peripheralId: UUID) async throws -> CBPeripheral {
+        let peripheral = try peripheral(withId: peripheralId)
+
+        return await withCheckedContinuation({continuation in
+            centralManager?.connect(peripheral)
+            peripheralConnectionContinuation = continuation
         })
     }
 
@@ -134,6 +163,11 @@ extension BluetoothRadio: CBCentralManagerDelegate {
         // hide invalid rssi advertisements
         if RSSI.intValue < 0 {
             peripheralSubject.send(PeripheralAdvertisement(peripheral: peripheral, advertisements: advertisementData, rssi: RSSI.intValue))
+            guard let continuation = peripheralDiscoveryContinuation else {
+                return
+            }
+            continuation.resume(returning: peripheral)
+            peripheralDiscoveryContinuation = nil
         }
     }
 
@@ -142,6 +176,12 @@ extension BluetoothRadio: CBCentralManagerDelegate {
 
         connectionEventSubject.send(peripheral)
         print("connected to ", peripheral)
+
+        guard let continuation = peripheralConnectionContinuation else {
+            return
+        }
+        continuation.resume(returning: peripheral)
+        peripheralConnectionContinuation = nil
     }
 
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {

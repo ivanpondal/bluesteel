@@ -76,6 +76,16 @@ the server without expecting a reply.
 7. If messages sent is less than **M**, go to step 4.
 8. Report test result.
 
+#### Only writes - foreground -> background
+
+After successfully scanning and connecting to an agent running background, the
+client sends a series of numbered messages to the server without expecting a
+reply.
+
+| Test case | MTU | Throttling | In Background | ACK      | Distance | # Connections | # Messages |
+| --------- | --- | ---------- | ------------- | -------- | -------- | ------------- | ---------- |
+| SR-OW-2   | Max | None       | Only receiver | Yes      | 1 meter  | 1             | 100        |
+
 #### Only indications
 
 After a successful connection, the server sends a series of numbered messages to

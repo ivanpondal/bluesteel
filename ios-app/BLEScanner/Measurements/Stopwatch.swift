@@ -9,20 +9,31 @@ import Foundation
 
 protocol Stopwatch {
     mutating func start()
-    mutating func stop() -> Int64
+    mutating func stop()
+    mutating func measure<T>(closure: () async throws -> T, onStop: (_ time: Int64) -> Void) async throws -> T
+    var lastReading: Int64 { get }
 }
 
 class DateStopwatch : Stopwatch {
     var startTime: Date = Date()
     var elapsedTime: TimeInterval = .infinity
+    var lastReading: Int64 = 0
 
     func start() {
         startTime = Date()
     }
 
-    func stop() -> Int64 {
+    func stop() {
         elapsedTime = Date().timeIntervalSince(startTime)
-        return .init(elapsedTime*1000)
+        lastReading = .init(elapsedTime*1000)
+    }
+
+    func measure<T>(closure: () async throws -> T, onStop: (_ time: Int64) -> Void) async throws -> T {
+        start()
+        let result = try await closure()
+        stop()
+        onStop(lastReading)
+        return result
     }
 }
 
@@ -31,14 +42,23 @@ class ContinuousClockStopwatch : Stopwatch {
     let clock: ContinuousClock = ContinuousClock()
     var startTime: ContinuousClock.Instant = .now
     var elapsedTime: Duration = .zero
+    var lastReading: Int64 = 0
 
     func start() {
         startTime = clock.now
     }
 
-    func stop() -> Int64 {
+    func stop() {
         elapsedTime = startTime.duration(to: clock.now)
-        return elapsedTime.ms()
+        lastReading = elapsedTime.ms()
+    }
+
+    func measure<T>(closure: () async throws -> T, onStop: (_ time: Int64) -> Void) async throws -> T {
+        start()
+        let result = try await closure()
+        stop()
+        onStop(lastReading)
+        return result
     }
 }
 

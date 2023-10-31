@@ -15,6 +15,7 @@ struct TestCaseView: View {
 
     var activeTestCase: TestCase
     var bluetoothRadio: BluetoothRadio
+    var targetDevice: Device?
 
     @State
     private var testRunnerState: String = "N/A"
@@ -32,24 +33,22 @@ struct TestCaseView: View {
     private var testRunOutput: String = ""
 
     private func runTest() async {
-        if (activeTestCase.devices.count > 0){
-            copyButtonText = TestCaseView.COPY_RESULTS_TEXT
-            let testRunner = TestRunner(bluetoothRadio: bluetoothRadio, testCase: activeTestCase, device: activeTestCase.devices.first!)
-            testRunner.$state.sink(receiveValue: { testRunnerState = $0 }).store(in: &cancellables)
-            testRunner.$packetsSent
-                .throttle(for: .seconds(0.5), scheduler: RunLoop.main, latest: true)
-                .sink(receiveValue: { testRunnerPacketsSent = $0 })
-                .store(in: &cancellables)
-            testRunner.$bytesSentPerSecond
-                .throttle(for: .seconds(0.5), scheduler: RunLoop.main, latest: true)
-                .sink(receiveValue: { testRunnerBytesSentPerSec = $0 })
-                .store(in: &cancellables)
-            testRunner.$mtu
-                .sink(receiveValue: {testRunnerMtu = $0})
-                .store(in: &cancellables)
-            await testRunner.run()
-            testRunOutput = testRunner.consoleOutput
-        }
+        copyButtonText = TestCaseView.COPY_RESULTS_TEXT
+        let testRunner = TestRunner(bluetoothRadio: bluetoothRadio, testCase: activeTestCase, targetDevice: targetDevice)
+        testRunner.$state.sink(receiveValue: { testRunnerState = $0 }).store(in: &cancellables)
+        testRunner.$packetsSent
+            .throttle(for: .seconds(0.5), scheduler: RunLoop.main, latest: true)
+            .sink(receiveValue: { testRunnerPacketsSent = $0 })
+            .store(in: &cancellables)
+        testRunner.$bytesSentPerSecond
+            .throttle(for: .seconds(0.5), scheduler: RunLoop.main, latest: true)
+            .sink(receiveValue: { testRunnerBytesSentPerSec = $0 })
+            .store(in: &cancellables)
+        testRunner.$mtu
+            .sink(receiveValue: {testRunnerMtu = $0})
+            .store(in: &cancellables)
+        await testRunner.run()
+        testRunOutput = testRunner.consoleOutput
     }
 
     var body: some View {
@@ -58,8 +57,12 @@ struct TestCaseView: View {
                 .font(.title)
                 .padding()
                 .frame(maxWidth: .infinity)
-            List(activeTestCase.devices) { connectedDevice in
-                TestCaseRunView(testDevice: connectedDevice, testRunnerState: testRunnerState, packetsSent: testRunnerPacketsSent, bytesPerSecond: testRunnerBytesSentPerSec, mtu: testRunnerMtu)
+            List(targetDevice != nil ? [targetDevice!] : []) { connectedDevice in
+                TestCaseRunView(testDevice: connectedDevice,
+                                testRunnerState: testRunnerState,
+                                packetsSent: testRunnerPacketsSent,
+                                bytesPerSecond: testRunnerBytesSentPerSec,
+                                mtu: testRunnerMtu)
             }.listStyle(.grouped)
 
             Spacer()

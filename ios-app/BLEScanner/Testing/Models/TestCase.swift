@@ -8,20 +8,28 @@
 import Foundation
 
 enum TestCaseId : String, CaseIterable {
-   case SR_OW_1
+    case SR_OW_1
+    case SR_OW_2
 
     func displayName() -> String {
         return rawValue.replacingOccurrences(of: "_", with: "-")
     }
 }
 
+
+enum TestCaseRole : String, CaseIterable {
+    case SENDER
+    case RECEIVER
+}
+
 struct TestCase : Identifiable, Equatable {
     let id : TestCaseId
-    let devices: [Device]
+    let role: TestCaseRole
+
 }
 
 extension TestCase {
     static var sampleData: [TestCase] {
-        [TestCase(id: .SR_OW_1, devices: Device.sampleData)]
+        [TestCase(id: .SR_OW_1, role: TestCaseRole.SENDER)]
     }
 }
