@@ -53,6 +53,7 @@ class TestRunner {
         consoleOutput += "\(now) - \(text)\n"
     }
 
+
     func run() async {
         do {
             switch testCase.id {
@@ -60,80 +61,75 @@ class TestRunner {
                 guard let targetDevice = targetDevice else {
                     fatalError("no target device found")
                 }
-                stopwatch.start()
-                let _ = try await bluetoothRadio.discover(fromPeripheralWithId: targetDevice.id, serviceId: BluetoothRadio.serviceUUID)
-                console(print: "service discovery time \(stopwatch.stop()) ms")
 
-                stopwatch.start()
-                let _ = try await bluetoothRadio.discover(fromPeripheralWithId: targetDevice.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
-                console(print: "characteristic discovery time \(stopwatch.stop()) ms")
+                try await discoverWriteCharacteristic(fromDeviceWithId: targetDevice.id)
 
-                mtu = try bluetoothRadio.mtu(forPeripheralId: targetDevice.id, withWriteType: .withoutResponse)
-                let mtuWithResponse = try bluetoothRadio.mtu(forPeripheralId: targetDevice.id, withWriteType: .withResponse)
-                console(print: "mtu \(mtu) bytes without response")
-                console(print: "mtu \(mtuWithResponse) bytes with response")
+                try negotiateMtu(fromDeviceWithId: targetDevice.id)
 
-                for i in 0..<100 {
-                    stopwatch.start()
-                    let data = generateRandomBytes(count: mtu)
-                    console(print: "\(i)th random bytes generation time \(stopwatch.stop()) ms")
+                try await sendData(toDeviceWithId: targetDevice.id)
 
-                    stopwatch.start()
-                    let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: targetDevice.id, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, data: data)
-                    let sendTimeInMs = stopwatch.stop()
-                    totalTimeSendingInMs += sendTimeInMs
-                    totalBytesSent += data.count
-                    bytesSentPerSecond = Float(1000 * totalBytesSent)/Float(totalTimeSendingInMs)
-                    packetsSent += 1
-
-                    console(print: "\(i)th write with response time \(sendTimeInMs) ms")
-                }
-                state = "FINISHED ☑️"
+                try bluetoothRadio.disconnect(fromPeripheralWithId: targetDevice.id)
             case .SR_OW_2:
-                stopwatch.start()
-                let targetPeripheral = await bluetoothRadio.discover(peripheralWithService: BluetoothRadio.serviceUUID)
-                console(print: "target device discovery time \(stopwatch.stop()) ms")
+                let targetPeripheral = try await stopwatch.measure {
+                    await bluetoothRadio.discover(peripheralWithService: BluetoothRadio.serviceUUID)
+                } onStop: { console(print: "target device discovery time \($0) ms") }
 
-                stopwatch.start()
-                let connectedPeripheral = try await bluetoothRadio.connect(toPeripheralWithId: targetPeripheral.identifier)
-                console(print: "target device discovery time \(stopwatch.stop()) ms")
+                let connectedPeripheral = try await stopwatch.measure {
+                    try await bluetoothRadio.connect(toPeripheralWithId: targetPeripheral.identifier)
+                } onStop: { console(print: "target device connection time \($0) ms") }
 
-                stopwatch.start()
-                let _ = try await bluetoothRadio.discover(fromPeripheralWithId: connectedPeripheral.identifier, serviceId: BluetoothRadio.serviceUUID)
-                console(print: "service discovery time \(stopwatch.stop()) ms")
+                try await discoverWriteCharacteristic(fromDeviceWithId: connectedPeripheral.identifier)
 
-                stopwatch.start()
-                let _ = try await bluetoothRadio.discover(fromPeripheralWithId: connectedPeripheral.identifier, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
-                console(print: "characteristic discovery time \(stopwatch.stop()) ms")
+                try negotiateMtu(fromDeviceWithId: connectedPeripheral.identifier)
 
-                mtu = try bluetoothRadio.mtu(forPeripheralId: connectedPeripheral.identifier, withWriteType: .withoutResponse)
-                let mtuWithResponse = try bluetoothRadio.mtu(forPeripheralId: connectedPeripheral.identifier, withWriteType: .withResponse)
-                console(print: "mtu \(mtu) bytes without response")
-                console(print: "mtu \(mtuWithResponse) bytes with response")
-
-                for i in 0..<100 {
-                    stopwatch.start()
-                    let data = generateRandomBytes(count: mtu)
-                    console(print: "\(i)th random bytes generation time \(stopwatch.stop()) ms")
-
-                    stopwatch.start()
-                    let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: connectedPeripheral.identifier, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, data: data)
-                    let sendTimeInMs = stopwatch.stop()
-                    totalTimeSendingInMs += sendTimeInMs
-                    totalBytesSent += data.count
-                    bytesSentPerSecond = Float(1000 * totalBytesSent)/Float(totalTimeSendingInMs)
-                    packetsSent += 1
-
-                    console(print: "\(i)th write with response time \(sendTimeInMs) ms")
-                }
+                try await sendData(toDeviceWithId: connectedPeripheral.identifier)
 
                 try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
-                state = "FINISHED ☑️"
             }
         } catch {
             console(print: "something went wrong: \(error)")
-            state = "FINISHED ☑️"
+        }
+        state = "FINISHED ☑️"
+    }
+
+    fileprivate func discoverWriteCharacteristic(fromDeviceWithId deviceId: UUID) async throws {
+        try await stopwatch.measure {
+            let _ = try await bluetoothRadio.discover(fromPeripheralWithId: deviceId, serviceId: BluetoothRadio.serviceUUID)
+        } onStop: { console(print: "service discovery time \($0) ms") }
+
+        try await stopwatch.measure {
+            let _ =  try await bluetoothRadio.discover(fromPeripheralWithId: deviceId, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
+        } onStop: { console(print: "characteristic discovery time \($0) ms") }
+    }
+
+    fileprivate func negotiateMtu(fromDeviceWithId deviceId: UUID) throws {
+        mtu = try bluetoothRadio.mtu(forPeripheralId: deviceId, withWriteType: .withoutResponse)
+        let mtuWithResponse = try bluetoothRadio.mtu(forPeripheralId: deviceId, withWriteType: .withResponse)
+        console(print: "mtu \(mtu) bytes without response")
+        console(print: "mtu \(mtuWithResponse) bytes with response")
+    }
+
+    fileprivate func sendData(toDeviceWithId deviceId: UUID) async throws {
+        for i in 0..<100 {
+            let data = try await stopwatch.measure {
+                generateRandomBytes(count: mtu)
+            } onStop: { console(print: "\(i)th random bytes generation time \($0) ms") }
+
+            let _ = try await stopwatch.measure {
+                let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: deviceId,
+                                                                   serviceId: BluetoothRadio.serviceUUID,
+                                                                   characteristicId: BluetoothRadio.chracteristicUUID,
+                                                                   data: data)
+            } onStop: { sendTimeInMs in
+                totalTimeSendingInMs += sendTimeInMs
+                totalBytesSent += data.count
+                bytesSentPerSecond = Float(1000 * totalBytesSent)/Float(totalTimeSendingInMs)
+                packetsSent += 1
+
+                console(print: "\(i)th write with response time \(sendTimeInMs) ms")
+            }
         }
     }
+
 }
 
