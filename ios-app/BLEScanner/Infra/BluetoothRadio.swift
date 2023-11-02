@@ -21,6 +21,8 @@ struct PeripheralAdvertisement {
 }
 
 class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
+    static let shared = BluetoothRadio()
+
     var centralManager: CBCentralManager?
     var peripheralManager: CBPeripheralManager?
 

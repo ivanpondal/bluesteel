@@ -10,6 +10,7 @@ import Foundation
 enum TestCaseId : String, CaseIterable {
     case SR_OW_1
     case SR_OW_2
+    case SR_OW_3
 
     func displayName() -> String {
         return rawValue.replacingOccurrences(of: "_", with: "-")
