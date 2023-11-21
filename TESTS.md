@@ -90,11 +90,21 @@ response.
 
 After a certain period of time, a background task is scheduled to connect and
 communicate with a server by sending a series of numbered messages without
-expeting a response.
+expecting a response.
 
 | Test case | MTU | Throttling | In Background | ACK      | Distance | # Connections | # Messages |
 | --------- | --- | ---------- | ------------- | -------- | -------- | ------------- | ---------- |
 | SR-OW-3   | Max | None       | Both devices  | Yes      | 1 meter  | 1             | 100        |
+
+#### Only writes - foreground -> background -> foreground (keep-alive)
+
+A foreground app wakes up a background app which then connects to the former and
+sends a series of numbered messages without expecting a response. This should
+set a foundation for a possible keep-alive mechanism.
+
+| Test case | MTU | Throttling | In Background | ACK      | Distance | # Connections | # Messages |
+| --------- | --- | ---------- | ------------- | -------- | -------- | ------------- | ---------- |
+| SR-OW-4   | Max | None       | Only receiver | Yes      | 1 meter  | 1             | 100        |
 
 #### Only indications
 
