@@ -7,6 +7,7 @@
 
 import Foundation
 import BackgroundTasks
+import UIKit
 
 class TestRunner {
     let bluetoothRadio: BluetoothRadio
@@ -91,6 +92,21 @@ class TestRunner {
                 taskRequest.earliestBeginDate = Date(timeIntervalSinceNow: 60)
                 try BGTaskScheduler.shared.submit(taskRequest)
                 console(print: "submitted test")
+            case .SR_OW_4:
+                switch testCase.role {
+                case .A:
+                    try await bluetoothRadio.publish(service: TestCase.createWriteTestService(), withLocalName: UIDevice.current.name)
+                    // search device with wake service
+                    // connect to device
+                    // send wake after N seconds
+                    // test server should stop (and mark test as done) once all writes are received or disconnection event from wake server
+                case .B:
+                    console(print: "Background role")
+                    // set up wake server
+                    // when wake is receive, search device with write test server
+                    // connect to device and start write test
+                    // wake server should stop once the agent has finished writing data0
+                }
             }
         } catch {
             console(print: "something went wrong: \(error)")

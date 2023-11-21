@@ -19,7 +19,7 @@ struct BLEScannerApp: App {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.blescanner.srow3", using: nil) {
             task in
             let testTask = Task {
-                let testRunner = TestRunner(bluetoothRadio: BluetoothRadio.shared, testCase: TestCase(id: .SR_OW_2, role: .SENDER), targetDevice: nil)
+                let testRunner = TestRunner(bluetoothRadio: BluetoothRadio.shared, testCase: TestCase(id: .SR_OW_2, role: .A), targetDevice: nil)
                 await testRunner.run()
                 task.setTaskCompleted(success: true)
             }

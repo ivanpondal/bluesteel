@@ -14,7 +14,7 @@ struct TestCaseListView: View {
     @State private var selectedDevices: [UUID: Bool] = [:]
     @State private var selectedTestCase: TestCaseId = TestCaseId.SR_OW_1
 
-    @State private var selectedRole: TestCaseRole = .SENDER
+    @State private var selectedRole: TestCaseRole = .A
 
     func NavigationViewWrapper(@ViewBuilder content: () -> some View) -> some View {
         if #available(iOS 16, *) {
@@ -41,8 +41,8 @@ struct TestCaseListView: View {
                         Text("Role")
                         Divider()
                         Picker("", selection: $selectedRole){
-                            Text("Sender").tag(TestCaseRole.SENDER)
-                            Text("Receiver").tag(TestCaseRole.RECEIVER)
+                            Text("Sender").tag(TestCaseRole.A)
+                            Text("Receiver").tag(TestCaseRole.B)
                         }.pickerStyle(.menu)
                     }.fixedSize().padding(.top, 24)
                 case .SR_OW_3:
@@ -50,8 +50,17 @@ struct TestCaseListView: View {
                         Text("Role")
                         Divider()
                         Picker("", selection: $selectedRole){
-                            Text("Sender").tag(TestCaseRole.SENDER)
-                            Text("Receiver").tag(TestCaseRole.RECEIVER)
+                            Text("Sender").tag(TestCaseRole.A)
+                            Text("Receiver").tag(TestCaseRole.B)
+                        }.pickerStyle(.menu)
+                    }.fixedSize().padding(.top, 24)
+                case .SR_OW_4:
+                    HStack(){
+                        Text("Role")
+                        Divider()
+                        Picker("", selection: $selectedRole){
+                            Text("Foreground").tag(TestCaseRole.A)
+                            Text("Background").tag(TestCaseRole.B)
                         }.pickerStyle(.menu)
                     }.fixedSize().padding(.top, 24)
                 }

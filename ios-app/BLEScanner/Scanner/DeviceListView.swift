@@ -29,7 +29,11 @@ struct DeviceListView: View {
                 }
             }
             .onAppear {
-                bluetoothRadio.start()
+                bluetoothRadio.start(onPeripheralReady: {
+                    Task {
+                        try await bluetoothRadio.publish(service: BluetoothRadio.createService(), withLocalName: UIDevice.current.name)
+                    }
+                })
             }
             .navigationBarHidden(true)
         }
