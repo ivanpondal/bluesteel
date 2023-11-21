@@ -45,6 +45,15 @@ struct TestCaseListView: View {
                             Text("Receiver").tag(TestCaseRole.RECEIVER)
                         }.pickerStyle(.menu)
                     }.fixedSize().padding(.top, 24)
+                case .SR_OW_3:
+                    HStack(){
+                        Text("Role")
+                        Divider()
+                        Picker("", selection: $selectedRole){
+                            Text("Sender").tag(TestCaseRole.SENDER)
+                            Text("Receiver").tag(TestCaseRole.RECEIVER)
+                        }.pickerStyle(.menu)
+                    }.fixedSize().padding(.top, 24)
                 }
                 Spacer()
                 HStack{

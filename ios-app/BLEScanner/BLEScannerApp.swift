@@ -6,13 +6,31 @@
 //
 
 import SwiftUI
+import BackgroundTasks
 
 @main
 struct BLEScannerApp: App {
 
     @Environment(\.scenePhase) var scenePhase
 
-    var bluetoothRadio: BluetoothRadio = BluetoothRadio()
+    var bluetoothRadio: BluetoothRadio = BluetoothRadio.shared
+
+    init() {
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.blescanner.srow3", using: nil) {
+            task in
+            let testTask = Task {
+                let testRunner = TestRunner(bluetoothRadio: BluetoothRadio.shared, testCase: TestCase(id: .SR_OW_2, role: .SENDER), targetDevice: nil)
+                await testRunner.run()
+                task.setTaskCompleted(success: true)
+            }
+
+            task.expirationHandler = {
+                print("SR-OW-3 Background task was cancelled")
+                testTask.cancel()
+                task.setTaskCompleted(success: false)
+            }
+        }
+    }
 
     var body: some Scene {
         WindowGroup {

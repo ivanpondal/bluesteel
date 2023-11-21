@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import BackgroundTasks
 
 class TestRunner {
     let bluetoothRadio: BluetoothRadio
@@ -85,6 +86,11 @@ class TestRunner {
                 try await sendData(toDeviceWithId: connectedPeripheral.identifier)
 
                 try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
+            case .SR_OW_3:
+                let taskRequest = BGAppRefreshTaskRequest(identifier: "com.blescanner.srow3")
+                taskRequest.earliestBeginDate = Date(timeIntervalSinceNow: 60)
+                try BGTaskScheduler.shared.submit(taskRequest)
+                console(print: "submitted test")
             }
         } catch {
             console(print: "something went wrong: \(error)")
