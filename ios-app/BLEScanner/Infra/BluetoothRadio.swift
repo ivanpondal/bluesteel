@@ -175,7 +175,7 @@ extension BluetoothRadio: CBCentralManagerDelegate {
             print("resetting")
         case .poweredOn:
             print("poweredOn")
-            centralManager?.scanForPeripherals(withServices: [BluetoothRadio.serviceUUID], options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
+            centralManager?.scanForPeripherals(withServices: [BluetoothRadio.serviceUUID, TestCase.writeTestServiceUUID], options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
         default:
             print("other")
         }
