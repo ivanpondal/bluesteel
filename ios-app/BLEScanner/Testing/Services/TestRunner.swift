@@ -96,13 +96,19 @@ class TestRunner {
                 switch testCase.role {
                 case .A:
                     try await bluetoothRadio.publish(service: TestCase.createWriteTestService(), withLocalName: UIDevice.current.name)
-                    // search device with wake service
-                    // connect to device
+
+                    let targetPeripheral = try await stopwatch.measure {
+                        await bluetoothRadio.discover(peripheralWithService: TestCase.wakeServiceUUID)
+                    } onStop: { console(print: "target device discovery time \($0) ms") }
+
+                    let connectedPeripheral = try await stopwatch.measure {
+                        try await bluetoothRadio.connect(toPeripheralWithId: targetPeripheral.identifier)
+                    } onStop: { console(print: "target device connection time \($0) ms") }
                     // send wake after N seconds
                     // test server should stop (and mark test as done) once all writes are received or disconnection event from wake server
+                    try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
                 case .B:
-                    console(print: "Background role")
-                    // set up wake server
+                    try await bluetoothRadio.publish(service: TestCase.createWakeService(), withLocalName: UIDevice.current.name)
                     // when wake is receive, search device with write test server
                     // connect to device and start write test
                     // wake server should stop once the agent has finished writing data0
@@ -130,7 +136,7 @@ class TestRunner {
         console(print: "mtu \(mtu) bytes without response")
         console(print: "mtu \(mtuWithResponse) bytes with response")
     }
-
+    
     fileprivate func sendData(toDeviceWithId deviceId: UUID) async throws {
         for i in 0..<100 {
             let data = try await stopwatch.measure {
