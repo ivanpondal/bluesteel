@@ -136,7 +136,7 @@ class TestRunner {
         console(print: "mtu \(mtu) bytes without response")
         console(print: "mtu \(mtuWithResponse) bytes with response")
     }
-    
+
     fileprivate func sendData(toDeviceWithId deviceId: UUID) async throws {
         for i in 0..<100 {
             let data = try await stopwatch.measure {
