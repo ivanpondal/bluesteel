@@ -48,6 +48,8 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
 
     private var peripheralReadyHandler: () -> Void = {}
 
+    private var writeHandlers: [CBUUID: (_ centra: CBCentral, _ data: Data) -> Void] = [:]
+
     func start(onPeripheralReady peripheralReadyHandler: @escaping ()-> Void = {}) {
         centralManager = CBCentralManager(delegate: self, queue: .global(qos: .utility), options: [CBCentralManagerOptionShowPowerAlertKey: true])
         peripheralManager = CBPeripheralManager(delegate: self, queue: .global(qos: .utility), options: [CBPeripheralManagerOptionShowPowerAlertKey: true])
@@ -143,17 +145,18 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
         return peripheral.maximumWriteValueLength(for: type)
     }
 
-    func publish(service: CBMutableService, withLocalName localName: String) async throws {
+    func publish(service: PeripheralService, withLocalName localName: String) async throws {
         if let peripheralManager {
-            let service = try await withCheckedThrowingContinuation({continuation in
-                peripheralManager.add(service)
+            let _ = try await withCheckedThrowingContinuation({continuation in
+                peripheralManager.add(service.toMutableService())
                 serviceRegistrationContinuation = continuation
             })
             peripheralManager.stopAdvertising()
             let _ = try await withCheckedThrowingContinuation({continuation in
-                peripheralManager.startAdvertising([CBAdvertisementDataLocalNameKey: localName, CBAdvertisementDataServiceUUIDsKey: [service.uuid]])
+                peripheralManager.startAdvertising([CBAdvertisementDataLocalNameKey: localName, CBAdvertisementDataServiceUUIDsKey: [service.serviceId]])
                 serviceAdvertisementContinuation=continuation
             })
+            writeHandlers.updateValue(service.writeHandler, forKey: service.characteristicId)
         }
     }
 
@@ -226,13 +229,10 @@ extension BluetoothRadio: CBPeripheralDelegate {
     static let chracteristicUUID = CBUUID(string: "A5C46D55-280D-4B9E-8335-BCA4C0977BDB")
     static let serviceUUID = CBUUID(string: "FE4B1073-17BB-4982-955F-28702F277F19")
 
-    static func createService() -> CBMutableService {
-        let characteristic = CBMutableCharacteristic(type: BluetoothRadio.chracteristicUUID, properties: [.writeWithoutResponse, .write], value: nil, permissions: [.writeable])
-        let service = CBMutableService(type: BluetoothRadio.serviceUUID, primary: true)
-
-        service.characteristics = [characteristic]
-
-        return service
+    static func createService() -> PeripheralService {
+        return PeripheralService(serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, writeHandler: {central, data in
+                print("receive message from ", central, String(bytes: data, encoding: .ascii)!)
+        })
     }
 
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
@@ -294,7 +294,11 @@ extension BluetoothRadio: CBPeripheralDelegate {
         for request in requests {
             guard let data = request.value else { peripheral.respond(to: firstRequest, withResult: .invalidAttributeValueLength); return }
 
-            print("receive message from ", request.central, String(bytes: data, encoding: .ascii)!)
+            if let handler = writeHandlers[request.characteristic.uuid] {
+                handler(request.central, data)
+            } else {
+                print("could not find handler for message from ", request.central, String(bytes: data, encoding: .ascii)!)
+            }
         }
         peripheral.respond(to: firstRequest, withResult: .success)
     }

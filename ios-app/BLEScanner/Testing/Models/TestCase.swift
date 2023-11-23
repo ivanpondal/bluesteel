@@ -32,7 +32,6 @@ struct TestCase : Identifiable, Equatable {
 }
 
 extension TestCase {
-
     static let writeTestCharacteristicUUID = CBUUID(string: "D0C253CA-07A9-47B2-BB7A-F877A56BE43B")
     static let writeTestServiceUUID = CBUUID(string: "7B442D4E-8D78-4214-97B3-3B2969709D69")
 
@@ -43,21 +42,15 @@ extension TestCase {
         [TestCase(id: .SR_OW_1, role: TestCaseRole.A)]
     }
 
-    static func createWriteTestService() -> CBMutableService {
-        let characteristic = CBMutableCharacteristic(type: writeTestCharacteristicUUID, properties: [.writeWithoutResponse, .write], value: nil, permissions: [.writeable])
-        let service = CBMutableService(type: writeTestServiceUUID, primary: true)
-
-        service.characteristics = [characteristic]
-
-        return service
+    static func createWriteTestService() -> PeripheralService {
+        return PeripheralService(serviceId: writeTestServiceUUID, characteristicId: writeTestCharacteristicUUID, writeHandler: {central, data in
+                print("receive message from ", central, String(bytes: data, encoding: .ascii)!)
+        })
     }
 
-    static func createWakeService() -> CBMutableService {
-        let characteristic = CBMutableCharacteristic(type: wakeCharacteristicUUID, properties: [.writeWithoutResponse, .write], value: nil, permissions: [.writeable])
-        let service = CBMutableService(type: wakeServiceUUID, primary: true)
-
-        service.characteristics = [characteristic]
-
-        return service
+    static func createWakeService(onWake: @escaping () -> Void) -> PeripheralService {
+        return PeripheralService(serviceId: wakeServiceUUID, characteristicId: wakeCharacteristicUUID, writeHandler: {central, data in
+            onWake()
+        })
     }
 }

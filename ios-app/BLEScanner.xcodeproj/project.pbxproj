@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		FA4DC006290C406200B2B1BC /* DeviceAdvDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA4DC005290C406200B2B1BC /* DeviceAdvDataView.swift */; };
 		FA9487722A1FA050005F2A14 /* TestCaseRunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA9487712A1FA050005F2A14 /* TestCaseRunView.swift */; };
+		FA9955E12B0F9E0000E3DDDD /* PeripheralService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA9955E02B0F9E0000E3DDDD /* PeripheralService.swift */; };
 		FA9A4C9C2A042D160056E5A1 /* TestCaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA9A4C9B2A042D160056E5A1 /* TestCaseView.swift */; };
 		FA9A4C9E2A0433740056E5A1 /* TestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA9A4C9D2A0433740056E5A1 /* TestCase.swift */; };
 		FAD2994328F4D89800F53608 /* BLEScannerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD2994228F4D89800F53608 /* BLEScannerApp.swift */; };
@@ -47,6 +48,7 @@
 		FA4DC005290C406200B2B1BC /* DeviceAdvDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAdvDataView.swift; sourceTree = "<group>"; };
 		FA74F1C029140C2D00C7F708 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FA9487712A1FA050005F2A14 /* TestCaseRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseRunView.swift; sourceTree = "<group>"; };
+		FA9955E02B0F9E0000E3DDDD /* PeripheralService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeripheralService.swift; sourceTree = "<group>"; };
 		FA9A4C9B2A042D160056E5A1 /* TestCaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseView.swift; sourceTree = "<group>"; };
 		FA9A4C9D2A0433740056E5A1 /* TestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCase.swift; sourceTree = "<group>"; };
 		FAD2993F28F4D89800F53608 /* BLEScanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BLEScanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -104,6 +106,7 @@
 			isa = PBXGroup;
 			children = (
 				FA9A4C9D2A0433740056E5A1 /* TestCase.swift */,
+				FA9955E02B0F9E0000E3DDDD /* PeripheralService.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -354,6 +357,7 @@
 				FA9A4C9C2A042D160056E5A1 /* TestCaseView.swift in Sources */,
 				FA9A4C9E2A0433740056E5A1 /* TestCase.swift in Sources */,
 				FAF1C6D629FACADB006841B3 /* TestCaseListView.swift in Sources */,
+				FA9955E12B0F9E0000E3DDDD /* PeripheralService.swift in Sources */,
 				FAE62FD32A0D23D3000A9C0A /* TestRunner.swift in Sources */,
 				FAD2994328F4D89800F53608 /* BLEScannerApp.swift in Sources */,
 				FAFA278B2906F12400CE0AE8 /* DeviceView.swift in Sources */,

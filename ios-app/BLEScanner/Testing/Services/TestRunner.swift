@@ -8,6 +8,7 @@
 import Foundation
 import BackgroundTasks
 import UIKit
+import CoreBluetooth
 
 class TestRunner {
     let bluetoothRadio: BluetoothRadio
@@ -64,11 +65,13 @@ class TestRunner {
                     fatalError("no target device found")
                 }
 
-                try await discoverWriteCharacteristic(fromDeviceWithId: targetDevice.id)
+                try await discoverWriteCharacteristic(withId: BluetoothRadio.chracteristicUUID,
+                                                      fromServiceWithId: BluetoothRadio.serviceUUID, onDeviceWithId: targetDevice.id)
 
                 try negotiateMtu(fromDeviceWithId: targetDevice.id)
 
-                try await sendData(toDeviceWithId: targetDevice.id)
+                try await sendData(toDeviceWithId: targetDevice.id,
+                                   serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
 
                 try bluetoothRadio.disconnect(fromPeripheralWithId: targetDevice.id)
             case .SR_OW_2:
@@ -80,11 +83,13 @@ class TestRunner {
                     try await bluetoothRadio.connect(toPeripheralWithId: targetPeripheral.identifier)
                 } onStop: { console(print: "target device connection time \($0) ms") }
 
-                try await discoverWriteCharacteristic(fromDeviceWithId: connectedPeripheral.identifier)
+                try await discoverWriteCharacteristic(withId: BluetoothRadio.chracteristicUUID,
+                                                      fromServiceWithId: BluetoothRadio.serviceUUID, onDeviceWithId: connectedPeripheral.identifier)
 
                 try negotiateMtu(fromDeviceWithId: connectedPeripheral.identifier)
 
-                try await sendData(toDeviceWithId: connectedPeripheral.identifier)
+                try await sendData(toDeviceWithId: connectedPeripheral.identifier,
+                                   serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
 
                 try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
             case .SR_OW_3:
@@ -95,6 +100,8 @@ class TestRunner {
             case .SR_OW_4:
                 switch testCase.role {
                 case .A:
+                    // wait N seconds ?
+
                     try await bluetoothRadio.publish(service: TestCase.createWriteTestService(), withLocalName: UIDevice.current.name)
 
                     let targetPeripheral = try await stopwatch.measure {
@@ -104,14 +111,37 @@ class TestRunner {
                     let connectedPeripheral = try await stopwatch.measure {
                         try await bluetoothRadio.connect(toPeripheralWithId: targetPeripheral.identifier)
                     } onStop: { console(print: "target device connection time \($0) ms") }
-                    // send wake after N seconds
+
+                    try await discoverWriteCharacteristic(withId: TestCase.wakeCharacteristicUUID,
+                                                          fromServiceWithId: TestCase.wakeServiceUUID, onDeviceWithId: connectedPeripheral.identifier)
+                    try await sendWake(toDeviceWithId: connectedPeripheral.identifier)
+
                     // test server should stop (and mark test as done) once all writes are received or disconnection event from wake server
                     try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
                 case .B:
-                    try await bluetoothRadio.publish(service: TestCase.createWakeService(), withLocalName: UIDevice.current.name)
-                    // when wake is receive, search device with write test server
-                    // connect to device and start write test
-                    // wake server should stop once the agent has finished writing data0
+                    try await bluetoothRadio.publish(service: TestCase.createWakeService { [self] in
+                        Task {
+                            let targetPeripheral = try await stopwatch.measure {
+                                await bluetoothRadio.discover(peripheralWithService: TestCase.writeTestServiceUUID)
+                            } onStop: { console(print: "target device discovery time \($0) ms") }
+
+                            let connectedPeripheral = try await stopwatch.measure {
+                                try await bluetoothRadio.connect(toPeripheralWithId: targetPeripheral.identifier)
+                            } onStop: { console(print: "target device connection time \($0) ms") }
+
+                            try await discoverWriteCharacteristic(withId: TestCase.writeTestCharacteristicUUID,
+                                                                  fromServiceWithId: TestCase.writeTestServiceUUID,
+                                                                  onDeviceWithId: connectedPeripheral.identifier)
+
+                            try negotiateMtu(fromDeviceWithId: connectedPeripheral.identifier)
+
+                            try await sendData(toDeviceWithId: connectedPeripheral.identifier,
+                                               serviceId: TestCase.writeTestServiceUUID,
+                                               characteristicId: TestCase.writeTestCharacteristicUUID)
+
+                            try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
+                        }
+                    }, withLocalName: UIDevice.current.name)
                 }
             }
         } catch {
@@ -120,13 +150,13 @@ class TestRunner {
         state = "FINISHED ☑️"
     }
 
-    fileprivate func discoverWriteCharacteristic(fromDeviceWithId deviceId: UUID) async throws {
+    fileprivate func discoverWriteCharacteristic(withId characteristicId: CBUUID, fromServiceWithId serviceId: CBUUID, onDeviceWithId deviceId: UUID) async throws {
         try await stopwatch.measure {
-            let _ = try await bluetoothRadio.discover(fromPeripheralWithId: deviceId, serviceId: BluetoothRadio.serviceUUID)
+            let _ = try await bluetoothRadio.discover(fromPeripheralWithId: deviceId, serviceId: serviceId)
         } onStop: { console(print: "service discovery time \($0) ms") }
 
         try await stopwatch.measure {
-            let _ =  try await bluetoothRadio.discover(fromPeripheralWithId: deviceId, serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
+            let _ =  try await bluetoothRadio.discover(fromPeripheralWithId: deviceId, serviceId: serviceId, characteristicId: characteristicId)
         } onStop: { console(print: "characteristic discovery time \($0) ms") }
     }
 
@@ -137,7 +167,7 @@ class TestRunner {
         console(print: "mtu \(mtuWithResponse) bytes with response")
     }
 
-    fileprivate func sendData(toDeviceWithId deviceId: UUID) async throws {
+    fileprivate func sendData(toDeviceWithId deviceId: UUID, serviceId: CBUUID, characteristicId: CBUUID) async throws {
         for i in 0..<100 {
             let data = try await stopwatch.measure {
                 generateRandomBytes(count: mtu)
@@ -145,8 +175,8 @@ class TestRunner {
 
             let _ = try await stopwatch.measure {
                 let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: deviceId,
-                                                                   serviceId: BluetoothRadio.serviceUUID,
-                                                                   characteristicId: BluetoothRadio.chracteristicUUID,
+                                                                   serviceId: serviceId,
+                                                                   characteristicId: characteristicId,
                                                                    data: data)
             } onStop: { sendTimeInMs in
                 totalTimeSendingInMs += sendTimeInMs
@@ -156,6 +186,18 @@ class TestRunner {
 
                 console(print: "\(i)th write with response time \(sendTimeInMs) ms")
             }
+        }
+    }
+
+    fileprivate func sendWake(toDeviceWithId deviceId: UUID) async throws {
+        let _ = try await stopwatch.measure {
+            let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: deviceId,
+                                                               serviceId: TestCase.wakeServiceUUID,
+                                                               characteristicId: TestCase.wakeCharacteristicUUID,
+                                                               data: "WAKE".data(using: .utf8)!)
+        } onStop: { sendTimeInMs in
+            totalTimeSendingInMs += sendTimeInMs
+            console(print: "wake with response time \(sendTimeInMs) ms")
         }
     }
 
