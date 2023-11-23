@@ -148,6 +148,7 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
     func publish(service: PeripheralService, withLocalName localName: String) async throws {
         if let peripheralManager {
             let _ = try await withCheckedThrowingContinuation({continuation in
+                peripheralManager.removeAllServices()
                 peripheralManager.add(service.toMutableService())
                 serviceRegistrationContinuation = continuation
             })

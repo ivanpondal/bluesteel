@@ -100,8 +100,6 @@ class TestRunner {
             case .SR_OW_4:
                 switch testCase.role {
                 case .A:
-                    // wait N seconds ?
-
                     try await bluetoothRadio.publish(service: TestCase.createWriteTestService(), withLocalName: UIDevice.current.name)
 
                     let targetPeripheral = try await stopwatch.measure {
@@ -115,9 +113,6 @@ class TestRunner {
                     try await discoverWriteCharacteristic(withId: TestCase.wakeCharacteristicUUID,
                                                           fromServiceWithId: TestCase.wakeServiceUUID, onDeviceWithId: connectedPeripheral.identifier)
                     try await sendWake(toDeviceWithId: connectedPeripheral.identifier)
-
-                    // test server should stop (and mark test as done) once all writes are received or disconnection event from wake server
-                    try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
                 case .B:
                     try await bluetoothRadio.publish(service: TestCase.createWakeService { [self] in
                         Task {
