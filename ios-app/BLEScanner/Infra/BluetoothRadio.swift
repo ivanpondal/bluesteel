@@ -37,13 +37,23 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
     var peripheralDiscoveryContinuation: CheckedContinuation<CBPeripheral, Never>? = nil
     var peripheralConnectionContinuation: CheckedContinuation<CBPeripheral, Never>? = nil
 
+    var serviceRegistrationContinuation: CheckedContinuation<CBService, Error>? = nil
+    var serviceAdvertisementContinuation: CheckedContinuation<Bool, Error>? = nil
+
     var serviceDiscoveryContinuation: CheckedContinuation<CBPeripheral, Error>? = nil
     var characteristicDiscoveryContinuation: CheckedContinuation<CBPeripheral, Error>? = nil
     var writeWithResponseContinuation: CheckedContinuation<Bool, Error>? = nil
 
-    func start() {
+    private var peripheralManagerReady: Bool = false
+
+    private var peripheralReadyHandler: () -> Void = {}
+
+    private var writeHandlers: [CBUUID: (_ centra: CBCentral, _ data: Data) -> Void] = [:]
+
+    func start(onPeripheralReady peripheralReadyHandler: @escaping ()-> Void = {}) {
         centralManager = CBCentralManager(delegate: self, queue: .global(qos: .utility), options: [CBCentralManagerOptionShowPowerAlertKey: true])
         peripheralManager = CBPeripheralManager(delegate: self, queue: .global(qos: .utility), options: [CBPeripheralManagerOptionShowPowerAlertKey: true])
+        self.peripheralReadyHandler = peripheralReadyHandler
     }
 
     func stopScan() {
@@ -134,6 +144,23 @@ class BluetoothRadio : NSObject, CBPeripheralManagerDelegate {
 
         return peripheral.maximumWriteValueLength(for: type)
     }
+
+    func publish(service: PeripheralService, withLocalName localName: String) async throws {
+        if let peripheralManager {
+            let _ = try await withCheckedThrowingContinuation({continuation in
+                peripheralManager.removeAllServices()
+                peripheralManager.add(service.toMutableService())
+                serviceRegistrationContinuation = continuation
+            })
+            peripheralManager.stopAdvertising()
+            let _ = try await withCheckedThrowingContinuation({continuation in
+                peripheralManager.startAdvertising([CBAdvertisementDataLocalNameKey: localName, CBAdvertisementDataServiceUUIDsKey: [service.serviceId]])
+                serviceAdvertisementContinuation=continuation
+            })
+            writeHandlers.updateValue(service.writeHandler, forKey: service.characteristicId)
+        }
+    }
+
 }
 
 
@@ -152,7 +179,7 @@ extension BluetoothRadio: CBCentralManagerDelegate {
             print("resetting")
         case .poweredOn:
             print("poweredOn")
-            centralManager?.scanForPeripherals(withServices: [BluetoothRadio.serviceUUID], options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
+            centralManager?.scanForPeripherals(withServices: [BluetoothRadio.serviceUUID, TestCase.writeTestServiceUUID], options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
         default:
             print("other")
         }
@@ -203,40 +230,62 @@ extension BluetoothRadio: CBPeripheralDelegate {
     static let chracteristicUUID = CBUUID(string: "A5C46D55-280D-4B9E-8335-BCA4C0977BDB")
     static let serviceUUID = CBUUID(string: "FE4B1073-17BB-4982-955F-28702F277F19")
 
-    fileprivate func createService() -> CBMutableService {
-        let characteristic = CBMutableCharacteristic(type: BluetoothRadio.chracteristicUUID, properties: [.writeWithoutResponse, .write], value: nil, permissions: [.writeable])
-        let service = CBMutableService(type: BluetoothRadio.serviceUUID, primary: true)
-
-        service.characteristics = [characteristic]
-
-        return service
+    static func createService() -> PeripheralService {
+        return PeripheralService(serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, writeHandler: {central, data in
+                print("receive message from ", central, String(bytes: data, encoding: .ascii)!)
+        })
     }
 
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         switch peripheral.state {
         case .poweredOn:
-            peripheral.add(createService())
+            self.peripheralManagerReady = true
+            peripheralReadyHandler()
+            peripheralReadyHandler = {}
         case .poweredOff:
+            self.peripheralManagerReady = false
             print("peripheral is down")
         default:
+            self.peripheralManagerReady = false
             print("other")
         }
     }
 
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
-        if let errorDescription = error?.localizedDescription {
-            print("something went wrong adding peripheral service: ", errorDescription)
+        if let error {
+            print("something went wrong adding peripheral service: ", error.localizedDescription)
+
+            guard let continuation = serviceRegistrationContinuation else {
+                print("missing service registration continuation")
+                return
+            }
+            continuation.resume(throwing: error)
+            return
         } else {
             print("peripheral service is up")
-            peripheral.startAdvertising([CBAdvertisementDataLocalNameKey: UIDevice.current.name, CBAdvertisementDataServiceUUIDsKey: [BluetoothRadio.serviceUUID]])
+            guard let continuation = serviceRegistrationContinuation else {
+                print("missing service registration continuation")
+                return
+            }
+            continuation.resume(returning: service)
         }
     }
 
     func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
-        if let errorDescription = error?.localizedDescription {
-            print("something went wrong advertising peripheral service: ", errorDescription)
+        if let error {
+            print("something went wrong advertising peripheral service: ", error.localizedDescription)
+            guard let continuation = serviceAdvertisementContinuation else {
+                print("missing service advertisement continuation")
+                return
+            }
+            continuation.resume(throwing: error)
         } else {
             print("peripheral is advertising service")
+            guard let continuation = serviceAdvertisementContinuation else {
+                print("missing service advertisement continuation")
+                return
+            }
+            continuation.resume(returning: true)
         }
     }
 
@@ -246,7 +295,11 @@ extension BluetoothRadio: CBPeripheralDelegate {
         for request in requests {
             guard let data = request.value else { peripheral.respond(to: firstRequest, withResult: .invalidAttributeValueLength); return }
 
-            print("receive message from ", request.central, String(bytes: data, encoding: .ascii)!)
+            if let handler = writeHandlers[request.characteristic.uuid] {
+                handler(request.central, data)
+            } else {
+                print("could not find handler for message from ", request.central, String(bytes: data, encoding: .ascii)!)
+            }
         }
         peripheral.respond(to: firstRequest, withResult: .success)
     }
