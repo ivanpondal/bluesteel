@@ -42,6 +42,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.work.WorkManager
 import com.example.blescanner.devicedetail.DeviceDetail
 import com.example.blescanner.devicedetail.DeviceDetailViewModel
 import com.example.blescanner.scanner.DeviceList
@@ -228,15 +229,13 @@ class MainActivity : ComponentActivity() {
                                     availableTestCases = TestCaseId.values().toList(),
                                     onTestCaseSelection = testCaseListViewModel::setTestCase,
                                     onClickRun = {
-                                        if (testCaseListViewModel.selectedDevices.value.isNotEmpty()) {
-                                            navController.navigate(
-                                                "testrunner/${testCaseListViewModel.selectedTestCase.value}?devices=${
-                                                    testCaseListViewModel.selectedDevices.value.joinToString(
-                                                        ","
-                                                    )
-                                                }"
-                                            )
-                                        }
+                                        navController.navigate(
+                                            "testrunner/${testCaseListViewModel.selectedTestCase.value}?devices=${
+                                                testCaseListViewModel.selectedDevices.value.joinToString(
+                                                    ","
+                                                )
+                                            }"
+                                        )
                                     }
                                 )
                             }
@@ -250,13 +249,14 @@ class MainActivity : ComponentActivity() {
                                     backStackEntry.arguments?.getString("testCase") ?: "N/A"
                                 )
                                 val devices =
-                                    backStackEntry.arguments?.getString("devices")?.split(",")
+                                    backStackEntry.arguments?.getString("devices")?.split(",")?.filter { it.isNotBlank() }
                                         ?: listOf()
                                 val owner = LocalLifecycleOwner.current
 
                                 val testCaseRunViewModel: TestCaseRunViewModel by viewModels {
                                     TestCaseRunViewModel.provideFactory(
                                         connectedDeviceRepository,
+                                        WorkManager.getInstance(applicationContext),
                                         testCase,
                                         devices.toSet()
                                     )

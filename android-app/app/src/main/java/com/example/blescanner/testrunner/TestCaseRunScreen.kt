@@ -49,13 +49,15 @@ fun TestCaseRun(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        TestCaseRunRow(
-            testRunnerState = testRunnerState,
-            selectedDevices.first(),
-            testRunnerPacketsSent,
-            testRunnerBytesPerSecond,
-            testRunnerMtu
-        )
+        if (selectedDevices.isNotEmpty()) {
+            TestCaseRunRow(
+                testRunnerState = testRunnerState,
+                selectedDevices.first(),
+                testRunnerPacketsSent,
+                testRunnerBytesPerSecond,
+                testRunnerMtu
+            )
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 
