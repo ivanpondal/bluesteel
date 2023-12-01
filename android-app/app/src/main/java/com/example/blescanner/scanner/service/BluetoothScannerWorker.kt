@@ -6,7 +6,9 @@ import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
+import com.example.blescanner.R
 import com.example.blescanner.testrunner.services.TestRunner
+import kotlinx.coroutines.delay
 
 class BluetoothScannerWorker(context: Context, parameters: WorkerParameters) :
     CoroutineWorker(context, parameters) {
@@ -18,12 +20,14 @@ class BluetoothScannerWorker(context: Context, parameters: WorkerParameters) :
         setForeground(createForegroundInfo())
 
         Log.i(TAG, "Running bluetooth scanner worker")
+        delay(40000)
         return Result.success()
     }
 
     private fun createForegroundInfo(): ForegroundInfo {
         val notification = NotificationCompat.Builder(applicationContext,"channelId" )
             .setContentTitle("GATT Server")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setTicker("GATT Server - ticker")
             .setContentText("Running...")
             .setOngoing(true)
