@@ -345,8 +345,8 @@ class MainActivity : ComponentActivity() {
                 return
             }
             Log.d(TAG, "Start scanning")
-            bluetoothScanner.startScan()
-            bleViewModel.startAdvertisement()
+//            bluetoothScanner.startScan()
+//            bleViewModel.startAdvertisement()
         }
     }
 }
