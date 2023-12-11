@@ -13,7 +13,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class BluetoothGattService(private val bluetoothManager: BluetoothManager, private val coroutineScope: CoroutineScope) : Service() {
+class BluetoothGattService() : Service() {
+
+    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    private val bluetoothManager: BluetoothManager by lazy {
+        application.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
+    }
 
     companion object {
         private val TAG = BluetoothGattService::class.simpleName
@@ -26,9 +31,10 @@ class BluetoothGattService(private val bluetoothManager: BluetoothManager, priva
         fun getService(): BluetoothGattService = this@BluetoothGattService
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onBind(intent: Intent?): IBinder? {
+        Log.i(TAG, "Starting bound service")
         val notification = NotificationCompat.Builder(applicationContext, "channelId")
-            .setContentTitle("GATT Server")
+            .setContentTitle("GATT bound Server")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setTicker("GATT Server - ticker")
             .setContentText("Running...")
@@ -51,10 +57,6 @@ class BluetoothGattService(private val bluetoothManager: BluetoothManager, priva
             Log.i(TAG, "Advertising service")
             bluetoothServer.startAdvertising(gattService)
         }
-
-        return super.onStartCommand(intent, flags, startId)
-    }
-    override fun onBind(intent: Intent?): IBinder? {
         return binder
     }
 }

@@ -1,14 +1,11 @@
 package com.example.blescanner.testrunner.services
 
 import android.util.Log
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import androidx.work.WorkRequest
 import com.example.blescanner.measurements.Stopwatch
 import com.example.blescanner.model.BluetoothSession
 import com.example.blescanner.scanner.service.BluetoothConstants.CHARACTERISTIC_UUID
 import com.example.blescanner.scanner.service.BluetoothConstants.SERVICE_UUID
-import com.example.blescanner.scanner.service.BluetoothScannerWorker
 import com.example.blescanner.testrunner.model.TestCaseId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -83,11 +80,11 @@ class TestRunner(private val session: BluetoothSession?, private val stopwatch: 
                 }
             }
             TestCaseId.SR_OW_2 -> {
-                val gattServerWorkRequest: WorkRequest =
-                    OneTimeWorkRequestBuilder<BluetoothScannerWorker>()
-                        .build()
-                workManager
-                    .enqueue(gattServerWorkRequest)
+//                val gattServerWorkRequest: WorkRequest =
+//                    OneTimeWorkRequestBuilder<BluetoothScannerWorker>()
+//                        .build()
+//                workManager
+//                    .enqueue(gattServerWorkRequest)
                 consoleOutput("enqueue work request", outputBuilder)
             }
         }

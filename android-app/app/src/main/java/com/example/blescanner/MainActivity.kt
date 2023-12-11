@@ -79,11 +79,13 @@ class MainActivity : ComponentActivity() {
 
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance.
+            Log.d(TAG, "connected")
             val binder = service as BluetoothGattService.BluetoothGattBinder
             gattService = binder.getService()
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
+            Log.d(TAG, "disconnected")
             // disconnect
         }
     }
@@ -364,6 +366,7 @@ class MainActivity : ComponentActivity() {
             }
             Log.d(TAG, "Start scanning")
             Intent(this, BluetoothGattService::class.java).also { intent ->
+                Log.d(TAG, "Binding to service")
                 bindService(intent, connection, Context.BIND_AUTO_CREATE)
             }
             bluetoothScanner.startScan()
