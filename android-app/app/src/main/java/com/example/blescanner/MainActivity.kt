@@ -5,11 +5,14 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -43,6 +46,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.work.WorkManager
+import com.example.blescanner.advertiser.BluetoothGattService
 import com.example.blescanner.devicedetail.DeviceDetail
 import com.example.blescanner.devicedetail.DeviceDetailViewModel
 import com.example.blescanner.scanner.DeviceList
@@ -69,7 +73,21 @@ class MainActivity : ComponentActivity() {
         private val TAG = MainActivity::class.simpleName
     }
 
-    private val bleViewModel: BluetoothAdvertiserViewModel by viewModels()
+    private lateinit var gattService: BluetoothGattService
+
+    private val connection = object : ServiceConnection {
+
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance.
+            val binder = service as BluetoothGattService.BluetoothGattBinder
+            gattService = binder.getService()
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+            // disconnect
+        }
+    }
+
     private val bluetoothManager: BluetoothManager by lazy {
         application.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
     }
@@ -325,7 +343,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (!bleViewModel.bluetoothEnabled) {
+        if (!bluetoothManager.adapter.isEnabled) {
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             turnOnBluetooth.launch(enableBtIntent)
         } else {
@@ -345,8 +363,15 @@ class MainActivity : ComponentActivity() {
                 return
             }
             Log.d(TAG, "Start scanning")
-//            bluetoothScanner.startScan()
-//            bleViewModel.startAdvertisement()
+            Intent(this, BluetoothGattService::class.java).also { intent ->
+                bindService(intent, connection, Context.BIND_AUTO_CREATE)
+            }
+            bluetoothScanner.startScan()
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        unbindService(connection)
     }
 }
