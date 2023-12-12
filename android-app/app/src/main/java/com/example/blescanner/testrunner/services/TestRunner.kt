@@ -1,9 +1,10 @@
 package com.example.blescanner.testrunner.services
 
 import android.util.Log
-import androidx.work.WorkManager
+import com.example.blescanner.advertiser.BluetoothGattService
 import com.example.blescanner.measurements.Stopwatch
 import com.example.blescanner.model.BluetoothSession
+import com.example.blescanner.scanner.service.BluetoothConstants
 import com.example.blescanner.scanner.service.BluetoothConstants.CHARACTERISTIC_UUID
 import com.example.blescanner.scanner.service.BluetoothConstants.SERVICE_UUID
 import com.example.blescanner.testrunner.model.TestCaseId
@@ -11,7 +12,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.random.Random
 
-class TestRunner(private val session: BluetoothSession?, private val stopwatch: Stopwatch, private val testCase: TestCaseId, private val workManager: WorkManager) {
+class TestRunner(
+    private val session: BluetoothSession?,
+    private val stopwatch: Stopwatch,
+    private val testCase: TestCaseId,
+    private val gattService: BluetoothGattService
+) {
 
     companion object {
         private val TAG = TestRunner::class.simpleName
@@ -49,7 +55,7 @@ class TestRunner(private val session: BluetoothSession?, private val stopwatch: 
     suspend fun run() {
         val outputBuilder = StringBuilder()
         when (testCase) {
-            TestCaseId.SR_OW_1 ->{
+            TestCaseId.SR_OW_1 -> {
                 session?.let {
                     stopwatch.start()
                     it.discoverServices()
@@ -59,7 +65,10 @@ class TestRunner(private val session: BluetoothSession?, private val stopwatch: 
                     stopwatch.start()
                     val mtu = session.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
                     _mtu.emit(mtu)
-                    consoleOutput("mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder)
+                    consoleOutput(
+                        "mtu $mtu bytes, request time ${stopwatch.stop()} ms",
+                        outputBuilder
+                    )
                     var totalTimeSendingInMs = 0L
                     var totalBytesSent = 0
                     repeat(100) {
@@ -68,7 +77,10 @@ class TestRunner(private val session: BluetoothSession?, private val stopwatch: 
                         session.writeWithResponse(SERVICE_UUID, CHARACTERISTIC_UUID, randomMessage)
                         val timeSendingInMs = stopwatch.stop()
 
-                        consoleOutput("${it}th write with response time $timeSendingInMs ms", outputBuilder)
+                        consoleOutput(
+                            "${it}th write with response time $timeSendingInMs ms",
+                            outputBuilder
+                        )
 
                         totalTimeSendingInMs += timeSendingInMs
                         totalBytesSent += randomMessage.size
@@ -79,13 +91,9 @@ class TestRunner(private val session: BluetoothSession?, private val stopwatch: 
                     _state.emit("FINISHED $CHECK_EMOJI")
                 }
             }
+
             TestCaseId.SR_OW_2 -> {
-//                val gattServerWorkRequest: WorkRequest =
-//                    OneTimeWorkRequestBuilder<BluetoothScannerWorker>()
-//                        .build()
-//                workManager
-//                    .enqueue(gattServerWorkRequest)
-                consoleOutput("enqueue work request", outputBuilder)
+                gattService.startServer(BluetoothConstants.writeAckServer)
             }
         }
         consoleOutput = outputBuilder.toString()

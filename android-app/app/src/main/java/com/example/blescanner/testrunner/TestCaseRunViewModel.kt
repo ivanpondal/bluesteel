@@ -3,7 +3,7 @@ package com.example.blescanner.testrunner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.work.WorkManager
+import com.example.blescanner.advertiser.BluetoothGattService
 import com.example.blescanner.measurements.SystemStopwatch
 import com.example.blescanner.scanner.repository.ConnectedDeviceRepository
 import com.example.blescanner.testrunner.model.TestCaseId
@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 class TestCaseRunViewModel(
     private val connectedDeviceRepository: ConnectedDeviceRepository,
-    private val workManager: WorkManager,
+    private val gattService: BluetoothGattService,
     val testCase: TestCaseId,
     val devices: Set<String>
 ) :
@@ -38,7 +38,7 @@ class TestCaseRunViewModel(
     companion object {
         fun provideFactory(
             connectedDeviceRepository: ConnectedDeviceRepository,
-            workManager: WorkManager,
+            gattService: BluetoothGattService,
             testCase: TestCaseId,
             devices: Set<String>
         ): ViewModelProvider.Factory =
@@ -47,7 +47,7 @@ class TestCaseRunViewModel(
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return TestCaseRunViewModel(
                         connectedDeviceRepository,
-                        workManager,
+                        gattService,
                         testCase,
                         devices
                     ) as T
@@ -58,7 +58,7 @@ class TestCaseRunViewModel(
     fun runTest() {
         val session = if (devices.isNotEmpty()) connectedDeviceRepository.getById(devices.first()) else null
         val testRunner =
-            TestRunner(session, SystemStopwatch(), testCase, workManager)
+            TestRunner(session, SystemStopwatch(), testCase, gattService)
 
 
         viewModelScope.launch {

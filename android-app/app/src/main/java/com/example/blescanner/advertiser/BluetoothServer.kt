@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.nio.charset.StandardCharsets
+import java.util.UUID
 
 @SuppressLint("MissingPermission")
 class BluetoothServer(
@@ -31,6 +32,7 @@ class BluetoothServer(
     }
 
     private lateinit var gattServer: BluetoothGattServer
+    private val writeHandlers: MutableMap<UUID, (String, Int, ByteArray) -> Unit> = mutableMapOf()
 
     private val servicePublishingChannel = Channel<Boolean>()
     private val advertisingChannel = Channel<Boolean>()
@@ -69,7 +71,15 @@ class BluetoothServer(
                 value
             )
 
-            value?.let {
+            if (device !== null && characteristic !== null && value !== null) {
+                writeHandlers[characteristic.uuid]?.let { writeHandler ->
+                    writeHandler(
+                        device.address,
+                        offset,
+                        value
+                    )
+                }
+
                 val message = String(value, StandardCharsets.UTF_8);
                 Log.d(
                     TAG,
@@ -124,11 +134,17 @@ class BluetoothServer(
 
         gattServer.addService(service)
 
-        return servicePublishingChannel.receive()
+        if (!servicePublishingChannel.receive()) {
+            return false
+        }
+
+        writeHandlers[gattService.characteristicUUID] = gattService.writeHandler
+
+        return true
     }
 
     @SuppressLint("MissingPermission")
-    suspend fun startAdvertising(gattService: GattService):Boolean {
+    suspend fun startAdvertising(gattService: GattService): Boolean {
         advertiser.startAdvertising(
             AdvertiseSettings.Builder().setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
                 .build(),

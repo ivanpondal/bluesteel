@@ -8,7 +8,6 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.blescanner.R
-import com.example.blescanner.scanner.service.BluetoothConstants
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -16,8 +15,12 @@ import kotlinx.coroutines.launch
 class BluetoothGattService() : Service() {
 
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
-    private val bluetoothManager: BluetoothManager by lazy {
-        application.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
+    private val bluetoothServer by lazy {
+        val bluetoothManager = application.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
+        BluetoothServer(
+            bluetoothManager, this.applicationContext,
+            coroutineScope
+        )
     }
 
     companion object {
@@ -42,14 +45,10 @@ class BluetoothGattService() : Service() {
             .build()
         startForeground(42, notification)
 
-        val bluetoothServer = BluetoothServer(
-            bluetoothManager, this.applicationContext,
-            CoroutineScope(Dispatchers.IO)
-        )
+        return binder
+    }
 
-        val gattService =
-            GattService(BluetoothConstants.SERVICE_UUID, BluetoothConstants.CHARACTERISTIC_UUID)
-
+    fun startServer(gattService: GattService) {
         coroutineScope.launch {
             Log.i(TAG, "Publishing service")
             bluetoothServer.publishService(gattService)
@@ -57,6 +56,5 @@ class BluetoothGattService() : Service() {
             Log.i(TAG, "Advertising service")
             bluetoothServer.startAdvertising(gattService)
         }
-        return binder
     }
 }

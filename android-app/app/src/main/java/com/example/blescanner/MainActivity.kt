@@ -45,7 +45,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.work.WorkManager
 import com.example.blescanner.advertiser.BluetoothGattService
 import com.example.blescanner.devicedetail.DeviceDetail
 import com.example.blescanner.devicedetail.DeviceDetailViewModel
@@ -54,6 +53,7 @@ import com.example.blescanner.scanner.DeviceListViewModel
 import com.example.blescanner.scanner.repository.ConnectedDeviceRepository
 import com.example.blescanner.scanner.repository.ScannedDeviceRepository
 import com.example.blescanner.scanner.service.BluetoothClientService
+import com.example.blescanner.scanner.service.BluetoothConstants
 import com.example.blescanner.scanner.service.BluetoothScanner
 import com.example.blescanner.testrunner.TestCaseList
 import com.example.blescanner.testrunner.TestCaseListViewModel
@@ -82,6 +82,7 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "connected")
             val binder = service as BluetoothGattService.BluetoothGattBinder
             gattService = binder.getService()
+            gattService.startServer(BluetoothConstants.writeAckServer)
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
@@ -269,14 +270,15 @@ class MainActivity : ComponentActivity() {
                                     backStackEntry.arguments?.getString("testCase") ?: "N/A"
                                 )
                                 val devices =
-                                    backStackEntry.arguments?.getString("devices")?.split(",")?.filter { it.isNotBlank() }
+                                    backStackEntry.arguments?.getString("devices")?.split(",")
+                                        ?.filter { it.isNotBlank() }
                                         ?: listOf()
                                 val owner = LocalLifecycleOwner.current
 
                                 val testCaseRunViewModel: TestCaseRunViewModel by viewModels {
                                     TestCaseRunViewModel.provideFactory(
                                         connectedDeviceRepository,
-                                        WorkManager.getInstance(applicationContext),
+                                        gattService,
                                         testCase,
                                         devices.toSet()
                                     )
@@ -364,17 +366,21 @@ class MainActivity : ComponentActivity() {
                 requestLocationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 return
             }
-            Log.d(TAG, "Start scanning")
             Intent(this, BluetoothGattService::class.java).also { intent ->
-                Log.d(TAG, "Binding to service")
                 bindService(intent, connection, Context.BIND_AUTO_CREATE)
             }
+            Log.d(TAG, "Start scanning")
             bluetoothScanner.startScan()
         }
     }
 
     override fun onStop() {
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy")
         unbindService(connection)
     }
 }
