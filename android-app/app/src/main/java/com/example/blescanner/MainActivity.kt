@@ -5,11 +5,14 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -42,6 +45,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.blescanner.advertiser.BluetoothGattService
 import com.example.blescanner.devicedetail.DeviceDetail
 import com.example.blescanner.devicedetail.DeviceDetailViewModel
 import com.example.blescanner.scanner.DeviceList
@@ -49,6 +53,7 @@ import com.example.blescanner.scanner.DeviceListViewModel
 import com.example.blescanner.scanner.repository.ConnectedDeviceRepository
 import com.example.blescanner.scanner.repository.ScannedDeviceRepository
 import com.example.blescanner.scanner.service.BluetoothClientService
+import com.example.blescanner.scanner.service.BluetoothConstants
 import com.example.blescanner.scanner.service.BluetoothScanner
 import com.example.blescanner.testrunner.TestCaseList
 import com.example.blescanner.testrunner.TestCaseListViewModel
@@ -68,7 +73,24 @@ class MainActivity : ComponentActivity() {
         private val TAG = MainActivity::class.simpleName
     }
 
-    private val bleViewModel: BluetoothAdvertiserViewModel by viewModels()
+    private lateinit var gattService: BluetoothGattService
+
+    private val connection = object : ServiceConnection {
+
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance.
+            Log.d(TAG, "connected")
+            val binder = service as BluetoothGattService.BluetoothGattBinder
+            gattService = binder.getService()
+            gattService.startServer(BluetoothConstants.writeAckServer)
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+            Log.d(TAG, "disconnected")
+            // disconnect
+        }
+    }
+
     private val bluetoothManager: BluetoothManager by lazy {
         application.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
     }
@@ -228,15 +250,13 @@ class MainActivity : ComponentActivity() {
                                     availableTestCases = TestCaseId.values().toList(),
                                     onTestCaseSelection = testCaseListViewModel::setTestCase,
                                     onClickRun = {
-                                        if (testCaseListViewModel.selectedDevices.value.isNotEmpty()) {
-                                            navController.navigate(
-                                                "testrunner/${testCaseListViewModel.selectedTestCase.value}?devices=${
-                                                    testCaseListViewModel.selectedDevices.value.joinToString(
-                                                        ","
-                                                    )
-                                                }"
-                                            )
-                                        }
+                                        navController.navigate(
+                                            "testrunner/${testCaseListViewModel.selectedTestCase.value}?devices=${
+                                                testCaseListViewModel.selectedDevices.value.joinToString(
+                                                    ","
+                                                )
+                                            }"
+                                        )
                                     }
                                 )
                             }
@@ -251,12 +271,14 @@ class MainActivity : ComponentActivity() {
                                 )
                                 val devices =
                                     backStackEntry.arguments?.getString("devices")?.split(",")
+                                        ?.filter { it.isNotBlank() }
                                         ?: listOf()
                                 val owner = LocalLifecycleOwner.current
 
                                 val testCaseRunViewModel: TestCaseRunViewModel by viewModels {
                                     TestCaseRunViewModel.provideFactory(
                                         connectedDeviceRepository,
+                                        gattService,
                                         testCase,
                                         devices.toSet()
                                     )
@@ -325,7 +347,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (!bleViewModel.bluetoothEnabled) {
+        if (!bluetoothManager.adapter.isEnabled) {
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             turnOnBluetooth.launch(enableBtIntent)
         } else {
@@ -344,9 +366,21 @@ class MainActivity : ComponentActivity() {
                 requestLocationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 return
             }
+            Intent(this, BluetoothGattService::class.java).also { intent ->
+                bindService(intent, connection, Context.BIND_AUTO_CREATE)
+            }
             Log.d(TAG, "Start scanning")
             bluetoothScanner.startScan()
-            bleViewModel.startAdvertisement()
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy")
+        unbindService(connection)
     }
 }
