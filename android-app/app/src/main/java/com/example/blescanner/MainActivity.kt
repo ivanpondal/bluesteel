@@ -60,6 +60,7 @@ import com.example.blescanner.testrunner.TestCaseListViewModel
 import com.example.blescanner.testrunner.TestCaseRun
 import com.example.blescanner.testrunner.TestCaseRunViewModel
 import com.example.blescanner.testrunner.model.TestCaseId
+import com.example.blescanner.testrunner.model.TestRole
 import com.example.blescanner.ui.theme.BLEScannerTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -249,6 +250,8 @@ class MainActivity : ComponentActivity() {
                                     selectedTestCase = testCaseListViewModel.selectedTestCase.collectAsState().value,
                                     availableTestCases = TestCaseId.values().toList(),
                                     onTestCaseSelection = testCaseListViewModel::setTestCase,
+                                    selectedTestCaseRole = testCaseListViewModel.selectedTestRole.collectAsState().value,
+                                    onTestRoleSelection = testCaseListViewModel::setTestRole,
                                     onClickRun = {
                                         navController.navigate(
                                             "testrunner/${testCaseListViewModel.selectedTestCase.value}?devices=${
@@ -280,6 +283,7 @@ class MainActivity : ComponentActivity() {
                                         connectedDeviceRepository,
                                         gattService,
                                         testCase,
+                                        TestRole.A,
                                         devices.toSet()
                                     )
                                 }

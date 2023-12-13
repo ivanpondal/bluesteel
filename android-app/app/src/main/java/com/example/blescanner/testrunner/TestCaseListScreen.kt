@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.example.blescanner.model.BluetoothDeviceData
 import com.example.blescanner.model.Identifiable
 import com.example.blescanner.testrunner.model.TestCaseId
+import com.example.blescanner.testrunner.model.TestRole
 import com.example.blescanner.ui.theme.BLEScannerTheme
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -49,32 +50,99 @@ fun TestCaseList(
     selectedTestCase: TestCaseId,
     availableTestCases: List<TestCaseId>,
     onTestCaseSelection: (testCase: TestCaseId) -> Unit,
+    selectedTestCaseRole: TestRole,
+    onTestRoleSelection: (testRole: TestRole) -> Unit,
     onClickRun: () -> Unit,
 ) {
     Column {
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            items(connectedDevices, key = { it.id }) {
-                Card(
-                    elevation = 2.dp,
-                    modifier = Modifier.toggleable(
-                        role = Role.Switch,
-                        value = selectedDevices.contains(it.id),
-                        onValueChange = { _ -> onDeviceToggle(it.id) },
-                    ),
+
+        if (selectedTestCase === TestCaseId.SR_OW_1) {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(connectedDevices, key = { it.id }) {
+                    Card(
+                        elevation = 2.dp,
+                        modifier = Modifier.toggleable(
+                            role = Role.Switch,
+                            value = selectedDevices.contains(it.id),
+                            onValueChange = { _ -> onDeviceToggle(it.id) },
+                        ),
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(it.id, fontSize = 14.sp)
+                            Spacer(Modifier.weight(1.0f))
+                            Switch(
+                                checked = selectedDevices.contains(it.id),
+                                onCheckedChange = null
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (selectedTestCase === TestCaseId.SR_OW_4) {
+            Column(
+                modifier = Modifier
+                    .background(MaterialTheme.colors.background)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                var expanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier.padding(bottom = 4.dp)
                 ) {
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                            .height(42.dp)
+                            .padding(4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(it.id, fontSize = 14.sp)
-                        Spacer(Modifier.weight(1.0f))
-                        Switch(checked = selectedDevices.contains(it.id), onCheckedChange = null)
+                        Text("Role")
+                        Divider(
+                            Modifier
+                                .fillMaxHeight()
+                                .padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
+                                .width(2.dp)
+                        )
+
+                        val selectedRole = when (selectedTestCaseRole) {
+                            TestRole.A -> "Foreground"
+                            TestRole.B -> "Background"
+                            else -> "N/A"
+                        }
+                        Text(
+                            selectedRole,
+                            color = MaterialTheme.colors.secondaryVariant,
+                            fontWeight = FontWeight.Bold
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }) {
+                            listOf(TestRole.A, TestRole.B).map {
+                                DropdownMenuItem(onClick = {
+                                    onTestRoleSelection(it)
+                                    expanded = false
+                                }) {
+                                    val role = when (it) {
+                                        TestRole.A -> "Foreground"
+                                        TestRole.B -> "Background"
+                                        else -> "N/A"
+                                    }
+                                    Text(role)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -146,8 +214,10 @@ fun TestCaseListPreview() {
             selectedDevices = setOf(BluetoothDeviceData.sampleDevices.first().id),
             onDeviceToggle = { _ -> },
             selectedTestCase = TestCaseId.SR_OW_1,
-            availableTestCases = listOf(TestCaseId.SR_OW_1),
+            availableTestCases = listOf(TestCaseId.SR_OW_1, TestCaseId.SR_OW_4),
             onTestCaseSelection = { _ -> },
+            selectedTestCaseRole = TestRole.A,
+            onTestRoleSelection = { _ -> },
             onClickRun = { }
         )
     }

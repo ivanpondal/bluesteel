@@ -8,6 +8,7 @@ import com.example.blescanner.scanner.service.BluetoothConstants
 import com.example.blescanner.scanner.service.BluetoothConstants.CHARACTERISTIC_UUID
 import com.example.blescanner.scanner.service.BluetoothConstants.SERVICE_UUID
 import com.example.blescanner.testrunner.model.TestCaseId
+import com.example.blescanner.testrunner.model.TestRole
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.random.Random
@@ -16,6 +17,7 @@ class TestRunner(
     private val session: BluetoothSession?,
     private val stopwatch: Stopwatch,
     private val testCase: TestCaseId,
+    private val testRole: TestRole,
     private val gattService: BluetoothGattService
 ) {
 
@@ -94,6 +96,14 @@ class TestRunner(
 
             TestCaseId.SR_OW_2 -> {
                 gattService.startServer(BluetoothConstants.writeAckServer)
+            }
+
+            TestCaseId.SR_OW_4 -> {
+                when (testRole) {
+                    TestRole.A -> TODO()
+                    TestRole.B -> TODO()
+                    else -> throw RuntimeException("Invalid role for test")
+                }
             }
         }
         consoleOutput = outputBuilder.toString()

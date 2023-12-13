@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.blescanner.scanner.repository.ConnectedDeviceRepository
 import com.example.blescanner.testrunner.model.TestCaseId
+import com.example.blescanner.testrunner.model.TestRole
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -39,6 +40,10 @@ class TestCaseListViewModel(connectedDeviceRepository: ConnectedDeviceRepository
         MutableStateFlow(TestCaseId.SR_OW_1)
     val selectedTestCase: StateFlow<TestCaseId> = _selectedTestCase
 
+    private val _selectedTestRole: MutableStateFlow<TestRole> =
+        MutableStateFlow(TestRole.A)
+    val selectedTestRole: StateFlow<TestRole> = _selectedTestRole
+
     init {
         viewModelScope.launch {
             connectedDeviceRepository.deviceRemovedEvent.collect {
@@ -59,6 +64,10 @@ class TestCaseListViewModel(connectedDeviceRepository: ConnectedDeviceRepository
 
     fun setTestCase(testCaseId: TestCaseId) {
         _selectedTestCase.update { testCaseId }
+    }
+
+    fun setTestRole(testRole: TestRole) {
+        _selectedTestRole.update { testRole }
     }
 
 }
