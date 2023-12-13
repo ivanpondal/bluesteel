@@ -382,7 +382,7 @@ class MainActivity : ComponentActivity() {
                 bindService(intent, connection, Context.BIND_AUTO_CREATE)
             }
             Log.d(TAG, "Start scanning")
-            bluetoothScanner.startScan()
+            bluetoothScanner.startScan(BluetoothConstants.WRITE_SERVICE_UUID)
         }
     }
 

@@ -112,7 +112,13 @@ class BluetoothServer(
 
         override fun onStartFailure(errorCode: Int) {
             super.onStartFailure(errorCode)
-            Log.d(TAG, "Advertising failed with error:  $errorCode")
+            when (errorCode) {
+                ADVERTISE_FAILED_ALREADY_STARTED ->
+                    Log.e(TAG, "Advertising failed with error:  ADVERTISE_FAILED_ALREADY_STARTED")
+
+                else ->
+                    Log.e(TAG, "Advertising failed with error:  $errorCode")
+            }
         }
     }
 
@@ -145,6 +151,8 @@ class BluetoothServer(
 
     @SuppressLint("MissingPermission")
     suspend fun startAdvertising(gattService: GattService): Boolean {
+        advertiser.stopAdvertising(advertisementCallback)
+
         advertiser.startAdvertising(
             AdvertiseSettings.Builder().setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
                 .build(),

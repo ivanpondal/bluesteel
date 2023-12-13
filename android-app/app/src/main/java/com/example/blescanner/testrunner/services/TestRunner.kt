@@ -7,6 +7,7 @@ import com.example.blescanner.measurements.Stopwatch
 import com.example.blescanner.model.BluetoothSession
 import com.example.blescanner.scanner.service.BluetoothClientService
 import com.example.blescanner.scanner.service.BluetoothConstants
+import com.example.blescanner.scanner.service.BluetoothConstants.WAKE_CHARACTERISTIC_UUID
 import com.example.blescanner.scanner.service.BluetoothConstants.WAKE_SERVICE_UUID
 import com.example.blescanner.scanner.service.BluetoothConstants.WRITE_CHARACTERISTIC_UUID
 import com.example.blescanner.scanner.service.BluetoothConstants.WRITE_SERVICE_UUID
@@ -69,7 +70,6 @@ class TestRunner(
                 session?.let {
                     stopwatch.start()
                     it.discoverServices()
-
                     consoleOutput("service discovery time ${stopwatch.stop()} ms", outputBuilder)
 
                     stopwatch.start()
@@ -129,6 +129,17 @@ class TestRunner(
                             outputBuilder
                         )
 
+                        stopwatch.start()
+                        connectedDevice.discoverServices()
+                        consoleOutput("service discovery time ${stopwatch.stop()} ms", outputBuilder)
+
+                        stopwatch.start()
+                        connectedDevice.writeWithResponse(
+                            WAKE_SERVICE_UUID,
+                            WAKE_CHARACTERISTIC_UUID,
+                            "WAKE".encodeToByteArray()
+                        )
+                        consoleOutput("send wake time ${stopwatch.stop()} ms", outputBuilder)
                         connectedDevice.close()
                     }
 
