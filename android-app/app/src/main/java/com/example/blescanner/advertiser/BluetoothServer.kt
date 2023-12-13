@@ -72,6 +72,8 @@ class BluetoothServer(
                 value
             )
 
+            gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
+
             if (device !== null && characteristic !== null && value !== null) {
                 writeHandlers[characteristic.uuid]?.let { writeHandler ->
                     coroutineScope.launch {
@@ -89,8 +91,6 @@ class BluetoothServer(
                     "Received value with offset $offset $responseNeeded from $device: $message"
                 )
             }
-
-            gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
         }
 
         override fun onServiceAdded(status: Int, service: BluetoothGattService?) {
@@ -141,6 +141,7 @@ class BluetoothServer(
         )
         service.addCharacteristic(messageCharacteristic)
 
+        gattServer.clearServices()
         gattServer.addService(service)
 
         if (!servicePublishingChannel.receive()) {

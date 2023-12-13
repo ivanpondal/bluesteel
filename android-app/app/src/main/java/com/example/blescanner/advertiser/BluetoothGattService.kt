@@ -38,19 +38,21 @@ class BluetoothGattService() : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? {
+        val notificationChannelId = "channelId"
+
         Log.i(TAG, "Starting bound service")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Create the NotificationChannel.
             val name = "BleScanner channel"
             val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val mChannel = NotificationChannel("channelId", name, importance)
+            val mChannel = NotificationChannel(notificationChannelId, name, importance)
             // Register the channel with the system. You can't change the importance
             // or other notification behaviors after this.
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(mChannel)
         }
 
-        val notification = NotificationCompat.Builder(applicationContext, "channelId")
+        val notification = NotificationCompat.Builder(applicationContext, notificationChannelId)
             .setContentTitle("GATT bound Server")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setTicker("GATT Server - ticker")

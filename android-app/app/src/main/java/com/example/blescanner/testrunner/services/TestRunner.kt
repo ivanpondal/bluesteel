@@ -147,8 +147,6 @@ class TestRunner(
                             )
 
                             sendRandomData(connectedDevice, outputBuilder)
-
-                            connectedDevice.close()
                         })
                     }
 
