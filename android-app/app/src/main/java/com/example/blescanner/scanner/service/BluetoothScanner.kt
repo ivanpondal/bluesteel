@@ -11,11 +11,12 @@ import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.example.blescanner.model.BluetoothDeviceAdvertisement
-import com.example.blescanner.scanner.service.BluetoothConstants.SERVICE_UUID
+import com.example.blescanner.scanner.service.BluetoothConstants.WRITE_SERVICE_UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class BluetoothScanner(
     private val bluetoothManager: BluetoothManager,
@@ -53,8 +54,19 @@ class BluetoothScanner(
 
     @RequiresPermission(value = "android.permission.BLUETOOTH_SCAN")
     fun startScan() {
+        bluetoothLeScanner.stopScan(scanCallback)
         bluetoothLeScanner.startScan(
-            listOf(ScanFilter.Builder().setServiceUuid(ParcelUuid(SERVICE_UUID)).build()),
+            listOf(ScanFilter.Builder().setServiceUuid(ParcelUuid(WRITE_SERVICE_UUID)).build()),
+            ScanSettings.Builder().build(),
+            scanCallback
+        )
+    }
+
+    @RequiresPermission(value = "android.permission.BLUETOOTH_SCAN")
+    fun startScan(serviceUUID: UUID) {
+        bluetoothLeScanner.stopScan(scanCallback)
+        bluetoothLeScanner.startScan(
+            listOf(ScanFilter.Builder().setServiceUuid(ParcelUuid(serviceUUID)).build()),
             ScanSettings.Builder().build(),
             scanCallback
         )

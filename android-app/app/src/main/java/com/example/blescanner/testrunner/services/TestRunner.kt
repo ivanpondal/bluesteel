@@ -1,16 +1,21 @@
 package com.example.blescanner.testrunner.services
 
+import android.annotation.SuppressLint
 import android.util.Log
 import com.example.blescanner.advertiser.BluetoothGattService
 import com.example.blescanner.measurements.Stopwatch
 import com.example.blescanner.model.BluetoothSession
+import com.example.blescanner.scanner.service.BluetoothClientService
 import com.example.blescanner.scanner.service.BluetoothConstants
-import com.example.blescanner.scanner.service.BluetoothConstants.CHARACTERISTIC_UUID
-import com.example.blescanner.scanner.service.BluetoothConstants.SERVICE_UUID
+import com.example.blescanner.scanner.service.BluetoothConstants.WAKE_SERVICE_UUID
+import com.example.blescanner.scanner.service.BluetoothConstants.WRITE_CHARACTERISTIC_UUID
+import com.example.blescanner.scanner.service.BluetoothConstants.WRITE_SERVICE_UUID
+import com.example.blescanner.scanner.service.BluetoothScanner
 import com.example.blescanner.testrunner.model.TestCaseId
 import com.example.blescanner.testrunner.model.TestRole
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlin.random.Random
 
 class TestRunner(
@@ -18,7 +23,9 @@ class TestRunner(
     private val stopwatch: Stopwatch,
     private val testCase: TestCaseId,
     private val testRole: TestRole,
-    private val gattService: BluetoothGattService
+    private val gattService: BluetoothGattService,
+    private val bluetoothScanner: BluetoothScanner,
+    private val bluetoothClientService: BluetoothClientService
 ) {
 
     companion object {
@@ -54,6 +61,7 @@ class TestRunner(
         stringBuilder.appendLine(message)
     }
 
+    @SuppressLint("MissingPermission")
     suspend fun run() {
         val outputBuilder = StringBuilder()
         when (testCase) {
@@ -76,7 +84,11 @@ class TestRunner(
                     repeat(100) {
                         val randomMessage = randomArray(mtu)
                         stopwatch.start()
-                        session.writeWithResponse(SERVICE_UUID, CHARACTERISTIC_UUID, randomMessage)
+                        session.writeWithResponse(
+                            WRITE_SERVICE_UUID,
+                            WRITE_CHARACTERISTIC_UUID,
+                            randomMessage
+                        )
                         val timeSendingInMs = stopwatch.stop()
 
                         consoleOutput(
@@ -100,8 +112,30 @@ class TestRunner(
 
             TestCaseId.SR_OW_4 -> {
                 when (testRole) {
-                    TestRole.A -> TODO()
-                    TestRole.B -> TODO()
+                    TestRole.A -> {
+                        gattService.startServer(BluetoothConstants.writeAckServer)
+
+                        stopwatch.start()
+                        bluetoothScanner.startScan(WAKE_SERVICE_UUID)
+                        val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
+                        consoleOutput("device discovery time ${stopwatch.stop()} ms", outputBuilder)
+
+                        stopwatch.start()
+                        bluetoothClientService.connect(targetDevice.id)
+
+                        val connectedDevice = bluetoothClientService.deviceConnectionEvent.first()
+                        consoleOutput(
+                            "device connection time ${stopwatch.stop()} ms",
+                            outputBuilder
+                        )
+
+                        connectedDevice.close()
+                    }
+
+                    TestRole.B -> {
+                        gattService.startServer(BluetoothConstants.wakeAckServer)
+                    }
+
                     else -> throw RuntimeException("Invalid role for test")
                 }
             }

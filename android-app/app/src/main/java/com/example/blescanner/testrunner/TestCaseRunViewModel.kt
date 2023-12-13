@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.blescanner.advertiser.BluetoothGattService
 import com.example.blescanner.measurements.SystemStopwatch
 import com.example.blescanner.scanner.repository.ConnectedDeviceRepository
+import com.example.blescanner.scanner.service.BluetoothClientService
+import com.example.blescanner.scanner.service.BluetoothScanner
 import com.example.blescanner.testrunner.model.TestCaseId
 import com.example.blescanner.testrunner.model.TestRole
 import com.example.blescanner.testrunner.services.TestRunner
@@ -16,6 +18,8 @@ import kotlinx.coroutines.launch
 class TestCaseRunViewModel(
     private val connectedDeviceRepository: ConnectedDeviceRepository,
     private val gattService: BluetoothGattService,
+    private val bluetoothScanner: BluetoothScanner,
+    private val bluetoothClientService: BluetoothClientService,
     val testCase: TestCaseId,
     val testRole: TestRole,
     val devices: Set<String>
@@ -41,6 +45,8 @@ class TestCaseRunViewModel(
         fun provideFactory(
             connectedDeviceRepository: ConnectedDeviceRepository,
             gattService: BluetoothGattService,
+            bluetoothScanner: BluetoothScanner,
+            bluetoothClientService: BluetoothClientService,
             testCase: TestCaseId,
             testRole: TestRole,
             devices: Set<String>
@@ -51,6 +57,8 @@ class TestCaseRunViewModel(
                     return TestCaseRunViewModel(
                         connectedDeviceRepository,
                         gattService,
+                        bluetoothScanner,
+                        bluetoothClientService,
                         testCase,
                         testRole,
                         devices
@@ -60,9 +68,18 @@ class TestCaseRunViewModel(
     }
 
     fun runTest() {
-        val session = if (devices.isNotEmpty()) connectedDeviceRepository.getById(devices.first()) else null
+        val session =
+            if (devices.isNotEmpty()) connectedDeviceRepository.getById(devices.first()) else null
         val testRunner =
-            TestRunner(session, SystemStopwatch(), testCase,testRole, gattService)
+            TestRunner(
+                session,
+                SystemStopwatch(),
+                testCase,
+                testRole,
+                gattService,
+                bluetoothScanner,
+                bluetoothClientService
+            )
 
 
         viewModelScope.launch {

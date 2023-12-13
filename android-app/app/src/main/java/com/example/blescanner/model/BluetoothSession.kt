@@ -206,4 +206,12 @@ class BluetoothSession(
             bluetoothDevice.connectGatt(context, false, gattClientCallback)
         }
     }
+
+    @SuppressLint("MissingPermission")
+    fun close(){
+        bluetoothGatt?.let { gatt ->
+            gatt.close()
+            bluetoothGatt = null
+        }
+    }
 }

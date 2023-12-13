@@ -254,23 +254,29 @@ class MainActivity : ComponentActivity() {
                                     onTestRoleSelection = testCaseListViewModel::setTestRole,
                                     onClickRun = {
                                         navController.navigate(
-                                            "testrunner/${testCaseListViewModel.selectedTestCase.value}?devices=${
-                                                testCaseListViewModel.selectedDevices.value.joinToString(
-                                                    ","
-                                                )
-                                            }"
+                                            "testrunner/${testCaseListViewModel.selectedTestCase.value}" +
+                                                    "?testRole=${testCaseListViewModel.selectedTestRole.value}" +
+                                                    "&devices=${
+                                                        testCaseListViewModel.selectedDevices.value.joinToString(
+                                                            ","
+                                                        )
+                                                    }"
                                         )
                                     }
                                 )
                             }
 
-                            composable("testrunner/{testCase}?devices={devices}",
+                            composable("testrunner/{testCase}?testRole={testRole}&devices={devices}",
                                 arguments = listOf(
                                     navArgument("testCase") { type = NavType.StringType },
+                                    navArgument("testRole") { type = NavType.StringType },
                                     navArgument("devices") { type = NavType.StringType }
                                 )) { backStackEntry ->
                                 val testCase = TestCaseId.valueOf(
                                     backStackEntry.arguments?.getString("testCase") ?: "N/A"
+                                )
+                                val testRole = TestRole.valueOf(
+                                    backStackEntry.arguments?.getString("testRole") ?: "N/A"
                                 )
                                 val devices =
                                     backStackEntry.arguments?.getString("devices")?.split(",")
@@ -282,8 +288,10 @@ class MainActivity : ComponentActivity() {
                                     TestCaseRunViewModel.provideFactory(
                                         connectedDeviceRepository,
                                         gattService,
+                                        bluetoothScanner,
+                                        bluetoothClientService,
                                         testCase,
-                                        TestRole.A,
+                                        testRole,
                                         devices.toSet()
                                     )
                                 }

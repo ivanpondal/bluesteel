@@ -43,7 +43,7 @@ class BluetoothClientService(
             val newBluetoothSession = BluetoothSession(bluetoothDevice, coroutineScope, context)
             launch {
                 newBluetoothSession.connectionEvent.collect { address ->
-                    val connectedSession = connectingSessions.get(address)
+                    val connectedSession = connectingSessions[address]
                     connectedSessions.remove(address)
                     connectedSession?.let {
                         connectedSessions[address] = it
@@ -53,7 +53,7 @@ class BluetoothClientService(
             }
             launch {
                 newBluetoothSession.disconnectionEvent.collect { address ->
-                    val disconnectedSession = connectedSessions.get(address)
+                    val disconnectedSession = connectedSessions[address]
                     connectedSessions.remove(address)
                     disconnectedSession?.let {
                         _deviceDisconnectionEvent.emit(it)
