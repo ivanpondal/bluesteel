@@ -140,7 +140,6 @@ class TestRunner(
                             "WAKE".encodeToByteArray()
                         )
                         consoleOutput("send wake time ${stopwatch.stop()} ms", outputBuilder)
-                        connectedDevice.close()
                     }
 
                     TestRole.B -> {
