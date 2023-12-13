@@ -32,7 +32,8 @@ class BluetoothServer(
     }
 
     private lateinit var gattServer: BluetoothGattServer
-    private val writeHandlers: MutableMap<UUID, (String, Int, ByteArray) -> Unit> = mutableMapOf()
+    private val writeHandlers: MutableMap<UUID, suspend (String, Int, ByteArray) -> Unit> =
+        mutableMapOf()
 
     private val servicePublishingChannel = Channel<Boolean>()
     private val advertisingChannel = Channel<Boolean>()
@@ -73,11 +74,13 @@ class BluetoothServer(
 
             if (device !== null && characteristic !== null && value !== null) {
                 writeHandlers[characteristic.uuid]?.let { writeHandler ->
-                    writeHandler(
-                        device.address,
-                        offset,
-                        value
-                    )
+                    coroutineScope.launch {
+                        writeHandler(
+                            device.address,
+                            offset,
+                            value
+                        )
+                    }
                 }
 
                 val message = String(value, StandardCharsets.UTF_8);
