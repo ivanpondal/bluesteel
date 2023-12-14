@@ -188,6 +188,7 @@ class BluetoothSession(
                         _disconnectionEvent.emit(this@BluetoothSession.id)
                     }
                     it.close()
+                    bluetoothGatt = null
                 }
             }
         }
@@ -208,7 +209,7 @@ class BluetoothSession(
     }
 
     @SuppressLint("MissingPermission")
-    fun close(){
+    fun close() {
         bluetoothGatt?.let { gatt ->
             gatt.close()
             bluetoothGatt = null
