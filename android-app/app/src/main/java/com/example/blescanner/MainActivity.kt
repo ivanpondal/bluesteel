@@ -300,6 +300,10 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
 
+                                testCaseRunViewModel.testCase = testCase
+                                testCaseRunViewModel.testRole = testRole
+                                testCaseRunViewModel.devices = devices.toSet()
+
                                 DisposableEffect(devices, testCase, owner) {
                                     val observer = LifecycleEventObserver { _, event ->
                                         when (event) {

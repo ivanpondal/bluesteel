@@ -20,9 +20,9 @@ class TestCaseRunViewModel(
     private val gattService: BluetoothGattService,
     private val bluetoothScanner: BluetoothScanner,
     private val bluetoothClientService: BluetoothClientService,
-    val testCase: TestCaseId,
-    val testRole: TestRole,
-    val devices: Set<String>
+    var testCase: TestCaseId,
+    var testRole: TestRole,
+    var devices: Set<String>
 ) :
     ViewModel() {
 
