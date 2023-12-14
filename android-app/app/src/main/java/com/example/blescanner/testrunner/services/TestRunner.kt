@@ -92,6 +92,7 @@ class TestRunner(
                         bluetoothScanner.startScan(WAKE_SERVICE_UUID)
                         val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
                         consoleOutput("device discovery time ${stopwatch.stop()} ms", outputBuilder)
+                        bluetoothScanner.stopScan()
 
                         stopwatch.start()
                         bluetoothClientService.connect(targetDevice.id)
@@ -128,6 +129,7 @@ class TestRunner(
                                 "device discovery time ${stopwatch.stop()} ms",
                                 outputBuilder
                             )
+                            bluetoothScanner.stopScan()
 
                             stopwatch.start()
                             bluetoothClientService.connect(targetDevice.id)
@@ -147,6 +149,8 @@ class TestRunner(
                             )
 
                             sendRandomData(connectedDevice, outputBuilder)
+
+                            connectedDevice.close()
                         })
                     }
 
