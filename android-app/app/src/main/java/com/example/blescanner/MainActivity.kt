@@ -1,6 +1,7 @@
 package com.example.blescanner
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.ClipData
@@ -80,6 +81,7 @@ class MainActivity : ComponentActivity() {
 
     private val connection = object : ServiceConnection {
 
+        @SuppressLint("MissingPermission")
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance.
             Log.d(TAG, "connected")
@@ -88,6 +90,9 @@ class MainActivity : ComponentActivity() {
             coroutineScope.launch {
                 gattService.startServer(BluetoothConstants.writeAckServer)
             }
+
+            Log.d(TAG, "Start scanning")
+            bluetoothScanner.startScan(BluetoothConstants.WRITE_SERVICE_UUID)
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
@@ -386,11 +391,13 @@ class MainActivity : ComponentActivity() {
                 requestLocationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 return
             }
-            Intent(this, BluetoothGattService::class.java).also { intent ->
-                bindService(intent, connection, Context.BIND_AUTO_CREATE)
-            }
-            Log.d(TAG, "Start scanning")
-            bluetoothScanner.startScan(BluetoothConstants.WRITE_SERVICE_UUID)
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Intent(this, BluetoothGattService::class.java).also { intent ->
+            bindService(intent, connection, Context.BIND_AUTO_CREATE)
         }
     }
 
