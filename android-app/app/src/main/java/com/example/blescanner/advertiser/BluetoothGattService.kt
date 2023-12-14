@@ -13,7 +13,6 @@ import androidx.core.app.NotificationCompat
 import com.example.blescanner.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class BluetoothGattService() : Service() {
 
@@ -64,13 +63,11 @@ class BluetoothGattService() : Service() {
         return binder
     }
 
-    fun startServer(gattService: GattService) {
-        coroutineScope.launch {
-            Log.i(TAG, "Publishing service")
-            bluetoothServer.publishService(gattService)
+    suspend fun startServer(gattService: GattService) {
+        Log.i(TAG, "Publishing service")
+        bluetoothServer.publishService(gattService)
 
-            Log.i(TAG, "Advertising service")
-            bluetoothServer.startAdvertising(gattService)
-        }
+        Log.i(TAG, "Advertising service")
+        bluetoothServer.startAdvertising(gattService)
     }
 }

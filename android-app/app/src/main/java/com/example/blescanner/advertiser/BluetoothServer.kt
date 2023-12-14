@@ -111,6 +111,9 @@ class BluetoothServer(
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
             super.onStartSuccess(settingsInEffect)
             Log.d(TAG, "Advertising successfully started")
+            coroutineScope.launch {
+                advertisingChannel.send(true)
+            }
         }
 
         override fun onStartFailure(errorCode: Int) {
@@ -172,6 +175,5 @@ class BluetoothServer(
     @SuppressLint("MissingPermission")
     suspend fun stopAdvertising() {
         advertiser.stopAdvertising(advertisementCallback)
-        advertisingChannel.send(true)
     }
 }

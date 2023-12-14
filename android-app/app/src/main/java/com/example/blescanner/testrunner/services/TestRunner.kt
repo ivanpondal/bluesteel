@@ -89,6 +89,7 @@ class TestRunner(
                         gattService.startServer(BluetoothConstants.writeAckServer)
 
                         stopwatch.start()
+                        consoleOutput("Scanning for device with wake service...", outputBuilder)
                         bluetoothScanner.startScan(WAKE_SERVICE_UUID)
                         val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
                         consoleOutput("device discovery time ${stopwatch.stop()} ms", outputBuilder)
@@ -123,6 +124,7 @@ class TestRunner(
                         consoleOutput("BACKGROUND", outputBuilder)
                         gattService.startServer(GattService.createWakeService { _, _, _ ->
                             stopwatch.start()
+                            consoleOutput("Scanning for device with write service...", outputBuilder)
                             bluetoothScanner.startScan(WRITE_SERVICE_UUID)
                             val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
                             consoleOutput(

@@ -65,6 +65,7 @@ import com.example.blescanner.ui.theme.BLEScannerTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import java.util.Collections.emptyList
 
 const val REQUEST_ENABLE_BT: Int = 1
@@ -75,6 +76,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private lateinit var gattService: BluetoothGattService
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     private val connection = object : ServiceConnection {
 
@@ -83,7 +85,9 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "connected")
             val binder = service as BluetoothGattService.BluetoothGattBinder
             gattService = binder.getService()
-            gattService.startServer(BluetoothConstants.writeAckServer)
+            coroutineScope.launch {
+                gattService.startServer(BluetoothConstants.writeAckServer)
+            }
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
@@ -99,7 +103,7 @@ class MainActivity : ComponentActivity() {
         BluetoothScanner(bluetoothManager, MainScope())
     }
     private val bluetoothClientService: BluetoothClientService by lazy {
-        BluetoothClientService(bluetoothManager, CoroutineScope(Dispatchers.IO), this)
+        BluetoothClientService(bluetoothManager, coroutineScope, this)
     }
 
     private val scannedDeviceRepository: ScannedDeviceRepository by lazy {
