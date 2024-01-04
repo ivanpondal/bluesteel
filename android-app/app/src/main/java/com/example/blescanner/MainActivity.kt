@@ -301,6 +301,7 @@ class MainActivity : ComponentActivity() {
                                         bluetoothClientService,
                                         testCase,
                                         testRole,
+                                        0u,
                                         devices.toSet()
                                     )
                                 }

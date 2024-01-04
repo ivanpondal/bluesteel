@@ -25,6 +25,7 @@ class TestRunner(
     private val stopwatch: Stopwatch,
     private val testCase: TestCaseId,
     private val testRole: TestRole,
+    private val testNodeIndex: UByte,
     private val gattService: BluetoothGattService,
     private val bluetoothScanner: BluetoothScanner,
     private val bluetoothClientService: BluetoothClientService
@@ -124,7 +125,10 @@ class TestRunner(
                         consoleOutput("BACKGROUND", outputBuilder)
                         gattService.startServer(GattService.createWakeService { _, _, _ ->
                             stopwatch.start()
-                            consoleOutput("Scanning for device with write service...", outputBuilder)
+                            consoleOutput(
+                                "Scanning for device with write service...",
+                                outputBuilder
+                            )
                             bluetoothScanner.startScan(WRITE_SERVICE_UUID)
                             val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
                             consoleOutput(
@@ -157,6 +161,17 @@ class TestRunner(
                     }
 
                     else -> throw RuntimeException("Invalid role for test")
+                }
+            }
+
+            TestCaseId.SR_OW_5 -> {
+                // do cool stuff
+                consoleOutput("I'm $testNodeIndex", outputBuilder)
+
+                when (testRole) {
+                    TestRole.A -> TODO()
+                    TestRole.B -> TODO()
+                    TestRole.C -> TODO()
                 }
             }
         }
