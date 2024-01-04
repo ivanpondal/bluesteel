@@ -24,11 +24,11 @@
 3. Turn off bluetooth and reset device.
 4. Run test.
 5. Retrieve logs:
-    a. Bug report:
+    1. Bug report:
     ```
     adb -s <device-id> bugreport <file-name>
     ```
-    b. Pulling log from device:
+    2. Pulling log from device:
     ```
     adb -s <device-id> pull /sdcard/btsnoop_hci.log
     ```
