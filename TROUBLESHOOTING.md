@@ -14,3 +14,21 @@
     3. Connect dongle pressing button, release when led goes green.
     4. Copy firmware.uf2 to MDK volume. In order to flash other programs, double
        tap button while connected.
+
+## Android
+
+### Enabling HCI bluetooth logs
+
+1. Go to `Settings -> Developer Options`.
+2. Enable `Bluetooth HCI snoop log`.
+3. Turn off bluetooth and reset device.
+4. Run test.
+5. Retrieve logs:
+    a. Bug report:
+    ```
+    adb -s <device-id> bugreport <file-name>
+    ```
+    b. Pulling log from device:
+    ```
+    adb -s <device-id> pull /sdcard/btsnoop_hci.log
+    ```
