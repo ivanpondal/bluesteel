@@ -106,6 +106,23 @@ set a foundation for a possible keep-alive mechanism.
 | --------- | --- | ---------- | ------------- | -------- | -------- | ------------- | ---------- |
 | SR-OW-4   | Max | None       | Only receiver | Yes      | 1 meter  | 1             | 100        |
 
+#### Only writes - Relay
+
+This test has three roles.
+
+- Role A: Sender, starts communication with relay node 0.
+- Role B: Relay node, listens for messages at relay address and forwards
+  messages to relay address + 1.
+- Role C: Receiver, listens for messages at relay address N.
+
+The sender communicates with the first relay node. This relay node will then
+forward data to the following node all the way until the final receiver gets the
+message.
+
+| Test case | MTU | Throttling | In Background            | ACK      | Distance | # Connections | # Messages |
+| --------- | --- | ---------- | ------------------------ | -------- | -------- | ------------- | ---------- |
+| SR-OW-5   | Max | None       | Relay nodes and receiver | Yes      | 1 meter  | 1             | 100        |
+
 #### Only indications
 
 After a successful connection, the server sends a series of numbered messages to
