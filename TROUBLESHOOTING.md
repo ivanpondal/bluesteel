@@ -23,12 +23,12 @@
 2. Enable `Bluetooth HCI snoop log`.
 3. Turn off bluetooth and reset device.
 4. Run test.
-5. Retrieve logs:
-    1. Bug report:
+5. Retrieve logs through one of the following methods:
+    1. Generate a bug report.
     ```
     adb -s <device-id> bugreport <file-name>
     ```
-    2. Pulling log from device:
+    2. Pull log from device.
     ```
     adb -s <device-id> pull /sdcard/btsnoop_hci.log
     ```
