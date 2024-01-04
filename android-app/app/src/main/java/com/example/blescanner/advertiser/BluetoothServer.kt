@@ -32,7 +32,8 @@ class BluetoothServer(
     }
 
     private lateinit var gattServer: BluetoothGattServer
-    private val writeHandlers: MutableMap<UUID, (String, Int, ByteArray) -> Unit> = mutableMapOf()
+    private val writeHandlers: MutableMap<UUID, suspend (String, Int, ByteArray) -> Unit> =
+        mutableMapOf()
 
     private val servicePublishingChannel = Channel<Boolean>()
     private val advertisingChannel = Channel<Boolean>()
@@ -71,13 +72,17 @@ class BluetoothServer(
                 value
             )
 
+            gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
+
             if (device !== null && characteristic !== null && value !== null) {
                 writeHandlers[characteristic.uuid]?.let { writeHandler ->
-                    writeHandler(
-                        device.address,
-                        offset,
-                        value
-                    )
+                    coroutineScope.launch {
+                        writeHandler(
+                            device.address,
+                            offset,
+                            value
+                        )
+                    }
                 }
 
                 val message = String(value, StandardCharsets.UTF_8);
@@ -86,8 +91,6 @@ class BluetoothServer(
                     "Received value with offset $offset $responseNeeded from $device: $message"
                 )
             }
-
-            gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
         }
 
         override fun onServiceAdded(status: Int, service: BluetoothGattService?) {
@@ -108,11 +111,20 @@ class BluetoothServer(
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
             super.onStartSuccess(settingsInEffect)
             Log.d(TAG, "Advertising successfully started")
+            coroutineScope.launch {
+                advertisingChannel.send(true)
+            }
         }
 
         override fun onStartFailure(errorCode: Int) {
             super.onStartFailure(errorCode)
-            Log.d(TAG, "Advertising failed with error:  $errorCode")
+            when (errorCode) {
+                ADVERTISE_FAILED_ALREADY_STARTED ->
+                    Log.e(TAG, "Advertising failed with error:  ADVERTISE_FAILED_ALREADY_STARTED")
+
+                else ->
+                    Log.e(TAG, "Advertising failed with error:  $errorCode")
+            }
         }
     }
 
@@ -132,6 +144,7 @@ class BluetoothServer(
         )
         service.addCharacteristic(messageCharacteristic)
 
+        gattServer.clearServices()
         gattServer.addService(service)
 
         if (!servicePublishingChannel.receive()) {
@@ -145,6 +158,8 @@ class BluetoothServer(
 
     @SuppressLint("MissingPermission")
     suspend fun startAdvertising(gattService: GattService): Boolean {
+        advertiser.stopAdvertising(advertisementCallback)
+
         advertiser.startAdvertising(
             AdvertiseSettings.Builder().setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
                 .build(),
@@ -160,6 +175,5 @@ class BluetoothServer(
     @SuppressLint("MissingPermission")
     suspend fun stopAdvertising() {
         advertiser.stopAdvertising(advertisementCallback)
-        advertisingChannel.send(true)
     }
 }

@@ -11,11 +11,11 @@ import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.example.blescanner.model.BluetoothDeviceAdvertisement
-import com.example.blescanner.scanner.service.BluetoothConstants.SERVICE_UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class BluetoothScanner(
     private val bluetoothManager: BluetoothManager,
@@ -47,14 +47,25 @@ class BluetoothScanner(
         }
 
         override fun onScanFailed(errorCode: Int) {
-            Log.e(BluetoothScanner::class.simpleName, "onScanFailed: code $errorCode")
+            when (errorCode) {
+                SCAN_FAILED_INTERNAL_ERROR ->
+                    Log.e(
+                        BluetoothScanner::class.simpleName,
+                        "onScanFailed: SCAN_FAILED_INTERNAL_ERROR"
+                    )
+
+                else ->
+                    Log.e(BluetoothScanner::class.simpleName, "onScanFailed: code $errorCode")
+            }
         }
     }
 
     @RequiresPermission(value = "android.permission.BLUETOOTH_SCAN")
-    fun startScan() {
+    fun startScan(serviceUUID: UUID) {
+        bluetoothLeScanner.stopScan(scanCallback)
+
         bluetoothLeScanner.startScan(
-            listOf(ScanFilter.Builder().setServiceUuid(ParcelUuid(SERVICE_UUID)).build()),
+            listOf(ScanFilter.Builder().setServiceUuid(ParcelUuid(serviceUUID)).build()),
             ScanSettings.Builder().build(),
             scanCallback
         )

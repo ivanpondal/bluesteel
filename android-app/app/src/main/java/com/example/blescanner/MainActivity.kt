@@ -1,6 +1,7 @@
 package com.example.blescanner
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.ClipData
@@ -60,10 +61,12 @@ import com.example.blescanner.testrunner.TestCaseListViewModel
 import com.example.blescanner.testrunner.TestCaseRun
 import com.example.blescanner.testrunner.TestCaseRunViewModel
 import com.example.blescanner.testrunner.model.TestCaseId
+import com.example.blescanner.testrunner.model.TestRole
 import com.example.blescanner.ui.theme.BLEScannerTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import java.util.Collections.emptyList
 
 const val REQUEST_ENABLE_BT: Int = 1
@@ -74,15 +77,22 @@ class MainActivity : ComponentActivity() {
     }
 
     private lateinit var gattService: BluetoothGattService
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     private val connection = object : ServiceConnection {
 
+        @SuppressLint("MissingPermission")
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance.
             Log.d(TAG, "connected")
             val binder = service as BluetoothGattService.BluetoothGattBinder
             gattService = binder.getService()
-            gattService.startServer(BluetoothConstants.writeAckServer)
+            coroutineScope.launch {
+                gattService.startServer(BluetoothConstants.writeAckServer)
+            }
+
+            Log.d(TAG, "Start scanning")
+            bluetoothScanner.startScan(BluetoothConstants.WRITE_SERVICE_UUID)
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
@@ -98,7 +108,7 @@ class MainActivity : ComponentActivity() {
         BluetoothScanner(bluetoothManager, MainScope())
     }
     private val bluetoothClientService: BluetoothClientService by lazy {
-        BluetoothClientService(bluetoothManager, CoroutineScope(Dispatchers.IO), this)
+        BluetoothClientService(bluetoothManager, coroutineScope, this)
     }
 
     private val scannedDeviceRepository: ScannedDeviceRepository by lazy {
@@ -249,25 +259,33 @@ class MainActivity : ComponentActivity() {
                                     selectedTestCase = testCaseListViewModel.selectedTestCase.collectAsState().value,
                                     availableTestCases = TestCaseId.values().toList(),
                                     onTestCaseSelection = testCaseListViewModel::setTestCase,
+                                    selectedTestCaseRole = testCaseListViewModel.selectedTestRole.collectAsState().value,
+                                    onTestRoleSelection = testCaseListViewModel::setTestRole,
                                     onClickRun = {
                                         navController.navigate(
-                                            "testrunner/${testCaseListViewModel.selectedTestCase.value}?devices=${
-                                                testCaseListViewModel.selectedDevices.value.joinToString(
-                                                    ","
-                                                )
-                                            }"
+                                            "testrunner/${testCaseListViewModel.selectedTestCase.value}" +
+                                                    "?testRole=${testCaseListViewModel.selectedTestRole.value}" +
+                                                    "&devices=${
+                                                        testCaseListViewModel.selectedDevices.value.joinToString(
+                                                            ","
+                                                        )
+                                                    }"
                                         )
                                     }
                                 )
                             }
 
-                            composable("testrunner/{testCase}?devices={devices}",
+                            composable("testrunner/{testCase}?testRole={testRole}&devices={devices}",
                                 arguments = listOf(
                                     navArgument("testCase") { type = NavType.StringType },
+                                    navArgument("testRole") { type = NavType.StringType },
                                     navArgument("devices") { type = NavType.StringType }
                                 )) { backStackEntry ->
                                 val testCase = TestCaseId.valueOf(
                                     backStackEntry.arguments?.getString("testCase") ?: "N/A"
+                                )
+                                val testRole = TestRole.valueOf(
+                                    backStackEntry.arguments?.getString("testRole") ?: "N/A"
                                 )
                                 val devices =
                                     backStackEntry.arguments?.getString("devices")?.split(",")
@@ -279,10 +297,17 @@ class MainActivity : ComponentActivity() {
                                     TestCaseRunViewModel.provideFactory(
                                         connectedDeviceRepository,
                                         gattService,
+                                        bluetoothScanner,
+                                        bluetoothClientService,
                                         testCase,
+                                        testRole,
                                         devices.toSet()
                                     )
                                 }
+
+                                testCaseRunViewModel.testCase = testCase
+                                testCaseRunViewModel.testRole = testRole
+                                testCaseRunViewModel.devices = devices.toSet()
 
                                 DisposableEffect(devices, testCase, owner) {
                                     val observer = LifecycleEventObserver { _, event ->
@@ -366,11 +391,13 @@ class MainActivity : ComponentActivity() {
                 requestLocationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 return
             }
-            Intent(this, BluetoothGattService::class.java).also { intent ->
-                bindService(intent, connection, Context.BIND_AUTO_CREATE)
-            }
-            Log.d(TAG, "Start scanning")
-            bluetoothScanner.startScan()
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Intent(this, BluetoothGattService::class.java).also { intent ->
+            bindService(intent, connection, Context.BIND_AUTO_CREATE)
         }
     }
 

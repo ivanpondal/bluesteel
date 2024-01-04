@@ -188,6 +188,7 @@ class BluetoothSession(
                         _disconnectionEvent.emit(this@BluetoothSession.id)
                     }
                     it.close()
+                    bluetoothGatt = null
                 }
             }
         }
@@ -204,6 +205,14 @@ class BluetoothSession(
             )
         } else {
             bluetoothDevice.connectGatt(context, false, gattClientCallback)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun close() {
+        bluetoothGatt?.let { gatt ->
+            gatt.close()
+            bluetoothGatt = null
         }
     }
 }

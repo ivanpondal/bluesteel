@@ -1,16 +1,18 @@
 package com.example.blescanner.advertiser
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.bluetooth.BluetoothManager
 import android.content.Intent
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.blescanner.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class BluetoothGattService() : Service() {
 
@@ -35,8 +37,21 @@ class BluetoothGattService() : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? {
+        val notificationChannelId = "channelId"
+
         Log.i(TAG, "Starting bound service")
-        val notification = NotificationCompat.Builder(applicationContext, "channelId")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Create the NotificationChannel.
+            val name = "BleScanner channel"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val mChannel = NotificationChannel(notificationChannelId, name, importance)
+            // Register the channel with the system. You can't change the importance
+            // or other notification behaviors after this.
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(mChannel)
+        }
+
+        val notification = NotificationCompat.Builder(applicationContext, notificationChannelId)
             .setContentTitle("GATT bound Server")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setTicker("GATT Server - ticker")
@@ -48,13 +63,11 @@ class BluetoothGattService() : Service() {
         return binder
     }
 
-    fun startServer(gattService: GattService) {
-        coroutineScope.launch {
-            Log.i(TAG, "Publishing service")
-            bluetoothServer.publishService(gattService)
+    suspend fun startServer(gattService: GattService) {
+        Log.i(TAG, "Publishing service")
+        bluetoothServer.publishService(gattService)
 
-            Log.i(TAG, "Advertising service")
-            bluetoothServer.startAdvertising(gattService)
-        }
+        Log.i(TAG, "Advertising service")
+        bluetoothServer.startAdvertising(gattService)
     }
 }
