@@ -83,6 +83,41 @@ fun TestCaseList(
                 onSelection = onTestRoleSelection
             )
         }
+
+        if (selectedTestCase === TestCaseId.SR_OW_5) {
+            DropdownPicker(
+                label = "Role",
+                selectionOptions = mapOf(
+                    TestRole.A to "Sender",
+                    TestRole.B to "Relay",
+                    TestRole.C to "Receiver"
+                ),
+                currentSelection = selectedTestCaseRole,
+                onSelection = onTestRoleSelection
+            )
+
+            when (selectedTestCaseRole) {
+                TestRole.B -> {
+                    DropdownPicker(
+                        label = "Node Index",
+                        selectionOptions = (0..4).associateWith { it.toString() },
+                        currentSelection = 0,
+                        onSelection = {}
+                    )
+                }
+
+                TestRole.C -> {
+                    DropdownPicker(
+                        label = "Node Index",
+                        selectionOptions = (0..4).associateWith { it.toString() },
+                        currentSelection = 0,
+                        onSelection = {}
+                    )
+                }
+
+                else -> {}
+            }
+        }
         Spacer(modifier = Modifier.weight(1.0f))
 
         DropdownPicker(
@@ -105,7 +140,7 @@ fun TestCaseList(
 
 @Preview
 @Composable
-fun TestCaseListPreview() {
+fun TestCaseListSrOw1Preview() {
     BLEScannerTheme {
         TestCaseList(
             connectedDevices = BluetoothDeviceData.sampleDevices,
@@ -115,6 +150,42 @@ fun TestCaseListPreview() {
             availableTestCases = listOf(TestCaseId.SR_OW_1, TestCaseId.SR_OW_4),
             onTestCaseSelection = { _ -> },
             selectedTestCaseRole = TestRole.A,
+            onTestRoleSelection = { _ -> },
+            onClickRun = { }
+        )
+    }
+}
+
+@Preview
+@Composable
+fun TestCaseListSrOw5SenderPreview() {
+    BLEScannerTheme {
+        TestCaseList(
+            connectedDevices = BluetoothDeviceData.sampleDevices,
+            selectedDevices = setOf(BluetoothDeviceData.sampleDevices.first().id),
+            onDeviceToggle = { _ -> },
+            selectedTestCase = TestCaseId.SR_OW_5,
+            availableTestCases = listOf(TestCaseId.SR_OW_1, TestCaseId.SR_OW_5),
+            onTestCaseSelection = { _ -> },
+            selectedTestCaseRole = TestRole.A,
+            onTestRoleSelection = { _ -> },
+            onClickRun = { }
+        )
+    }
+}
+
+@Preview
+@Composable
+fun TestCaseListSrOw5RelayPreview() {
+    BLEScannerTheme {
+        TestCaseList(
+            connectedDevices = BluetoothDeviceData.sampleDevices,
+            selectedDevices = setOf(BluetoothDeviceData.sampleDevices.first().id),
+            onDeviceToggle = { _ -> },
+            selectedTestCase = TestCaseId.SR_OW_5,
+            availableTestCases = listOf(TestCaseId.SR_OW_1, TestCaseId.SR_OW_5),
+            onTestCaseSelection = { _ -> },
+            selectedTestCaseRole = TestRole.B,
             onTestRoleSelection = { _ -> },
             onClickRun = { }
         )
