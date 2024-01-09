@@ -38,6 +38,8 @@ fun TestCaseList(
     onTestCaseSelection: (testCase: TestCaseId) -> Unit,
     selectedTestCaseRole: TestRole,
     onTestRoleSelection: (testRole: TestRole) -> Unit,
+    selectedTestNodeIndex: UByte,
+    onTestNodeIndexSelection: (testNodeIndex: UByte) -> Unit,
     onClickRun: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -100,18 +102,18 @@ fun TestCaseList(
                 TestRole.B -> {
                     DropdownPicker(
                         label = "Node Index",
-                        selectionOptions = (0..4).associateWith { it.toString() },
-                        currentSelection = 0,
-                        onSelection = {}
+                        selectionOptions = (0u..4u).associate { it.toUByte() to it.toString() },
+                        currentSelection = selectedTestNodeIndex,
+                        onSelection = onTestNodeIndexSelection
                     )
                 }
 
                 TestRole.C -> {
                     DropdownPicker(
                         label = "Node Index",
-                        selectionOptions = (0..4).associateWith { it.toString() },
-                        currentSelection = 0,
-                        onSelection = {}
+                        selectionOptions = (0u..4u).associate { it.toUByte() to it.toString() },
+                        currentSelection = selectedTestNodeIndex,
+                        onSelection = onTestNodeIndexSelection
                     )
                 }
 
@@ -151,6 +153,8 @@ fun TestCaseListSrOw1Preview() {
             onTestCaseSelection = { _ -> },
             selectedTestCaseRole = TestRole.A,
             onTestRoleSelection = { _ -> },
+            selectedTestNodeIndex = 0u,
+            onTestNodeIndexSelection = {},
             onClickRun = { }
         )
     }
@@ -169,6 +173,8 @@ fun TestCaseListSrOw5SenderPreview() {
             onTestCaseSelection = { _ -> },
             selectedTestCaseRole = TestRole.A,
             onTestRoleSelection = { _ -> },
+            selectedTestNodeIndex = 0u,
+            onTestNodeIndexSelection = {},
             onClickRun = { }
         )
     }
@@ -187,6 +193,8 @@ fun TestCaseListSrOw5RelayPreview() {
             onTestCaseSelection = { _ -> },
             selectedTestCaseRole = TestRole.B,
             onTestRoleSelection = { _ -> },
+            selectedTestNodeIndex = 0u,
+            onTestNodeIndexSelection = {},
             onClickRun = { }
         )
     }

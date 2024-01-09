@@ -261,10 +261,13 @@ class MainActivity : ComponentActivity() {
                                     onTestCaseSelection = testCaseListViewModel::setTestCase,
                                     selectedTestCaseRole = testCaseListViewModel.selectedTestRole.collectAsState().value,
                                     onTestRoleSelection = testCaseListViewModel::setTestRole,
+                                    selectedTestNodeIndex = testCaseListViewModel.selectedTestNodeIndex.collectAsState().value,
+                                    onTestNodeIndexSelection = testCaseListViewModel::setTestNodeIndex,
                                     onClickRun = {
                                         navController.navigate(
                                             "testrunner/${testCaseListViewModel.selectedTestCase.value}" +
                                                     "?testRole=${testCaseListViewModel.selectedTestRole.value}" +
+                                                    "&testNodeIndex=${testCaseListViewModel.selectedTestNodeIndex.value}" +
                                                     "&devices=${
                                                         testCaseListViewModel.selectedDevices.value.joinToString(
                                                             ","
@@ -275,10 +278,13 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            composable("testrunner/{testCase}?testRole={testRole}&devices={devices}",
+                            composable("testrunner/{testCase}?testRole={testRole}&testNodeIndex={testNodeIndex}&devices={devices}",
                                 arguments = listOf(
                                     navArgument("testCase") { type = NavType.StringType },
                                     navArgument("testRole") { type = NavType.StringType },
+                                    navArgument("testNodeIndex") {
+                                        type = androidx.navigation.NavType.IntType
+                                    },
                                     navArgument("devices") { type = NavType.StringType }
                                 )) { backStackEntry ->
                                 val testCase = TestCaseId.valueOf(
@@ -287,10 +293,14 @@ class MainActivity : ComponentActivity() {
                                 val testRole = TestRole.valueOf(
                                     backStackEntry.arguments?.getString("testRole") ?: "N/A"
                                 )
+                                val testNodeIndex =
+                                    backStackEntry.arguments?.getInt("testNodeIndex", 0)?.toUByte()
+                                        ?: 0u
                                 val devices =
                                     backStackEntry.arguments?.getString("devices")?.split(",")
                                         ?.filter { it.isNotBlank() }
                                         ?: listOf()
+
                                 val owner = LocalLifecycleOwner.current
 
                                 val testCaseRunViewModel: TestCaseRunViewModel by viewModels {
@@ -301,13 +311,14 @@ class MainActivity : ComponentActivity() {
                                         bluetoothClientService,
                                         testCase,
                                         testRole,
-                                        0u,
+                                        testNodeIndex,
                                         devices.toSet()
                                     )
                                 }
 
                                 testCaseRunViewModel.testCase = testCase
                                 testCaseRunViewModel.testRole = testRole
+                                testCaseRunViewModel.testNodeIndex = testNodeIndex
                                 testCaseRunViewModel.devices = devices.toSet()
 
                                 DisposableEffect(devices, testCase, owner) {

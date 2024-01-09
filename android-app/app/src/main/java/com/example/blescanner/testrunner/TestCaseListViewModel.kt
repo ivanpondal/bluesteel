@@ -44,6 +44,10 @@ class TestCaseListViewModel(connectedDeviceRepository: ConnectedDeviceRepository
         MutableStateFlow(TestRole.A)
     val selectedTestRole: StateFlow<TestRole> = _selectedTestRole
 
+    private val _selectedTestNodeIndex: MutableStateFlow<UByte> =
+        MutableStateFlow(0u)
+    val selectedTestNodeIndex: StateFlow<UByte> = _selectedTestNodeIndex
+
     init {
         viewModelScope.launch {
             connectedDeviceRepository.deviceRemovedEvent.collect {
@@ -68,6 +72,10 @@ class TestCaseListViewModel(connectedDeviceRepository: ConnectedDeviceRepository
 
     fun setTestRole(testRole: TestRole) {
         _selectedTestRole.update { testRole }
+    }
+
+    fun setTestNodeIndex(testNodeIndex: UByte){
+        _selectedTestNodeIndex.update { testNodeIndex }
     }
 
 }
