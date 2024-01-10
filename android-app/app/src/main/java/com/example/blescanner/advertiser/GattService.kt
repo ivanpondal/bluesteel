@@ -10,7 +10,7 @@ class GattService(
     val writeHandler: suspend (deviceAddress: String, offset: Int, value: ByteArray) -> Unit
 ) {
     companion object {
-        public fun createWakeService(writeHandler: suspend (deviceAddress: String, offset: Int, value: ByteArray) -> Unit): GattService {
+        fun createWakeService(writeHandler: suspend (deviceAddress: String, offset: Int, value: ByteArray) -> Unit): GattService {
             return GattService(
                 BluetoothConstants.WAKE_SERVICE_UUID,
                 BluetoothConstants.WAKE_CHARACTERISTIC_UUID,
@@ -26,12 +26,16 @@ class GattService(
             return UUID.fromString(newUuidStr)
         }
 
-        public fun createRelayService(
+        fun getRelayServiceIdWithNodeIndex(nodeIndex: UByte): UUID {
+            return incrementLastDigit(BluetoothConstants.RELAY_SERVICE_UUID, nodeIndex)
+        }
+
+        fun createRelayService(
             nodeIndex: UByte,
             writeHandler: suspend (deviceAddress: String, offset: Int, value: ByteArray) -> Unit
         ): GattService {
             return GattService(
-                incrementLastDigit(BluetoothConstants.RELAY_SERVICE_UUID, nodeIndex),
+                getRelayServiceIdWithNodeIndex(nodeIndex),
                 BluetoothConstants.RELAY_WRITE_CHARACTERISTIC_UUID,
                 writeHandler
             )

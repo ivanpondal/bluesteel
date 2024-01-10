@@ -203,11 +203,50 @@ class TestRunner(
                     }
 
                     TestRole.B -> {
-                        // listen for messages at address i
-                        // scan for node relay i+1
-                        // when receiving data
-                        // connect to i+1
-                        // relay received data
+                        consoleOutput("RELAY", outputBuilder)
+
+                        stopwatch.start()
+                        consoleOutput(
+                            "Scanning for device with relay service...", outputBuilder
+                        )
+                        val targetRelayServiceId = GattService.getRelayServiceIdWithNodeIndex(
+                            nodeIndex = testNodeIndex.inc()
+
+                        )
+                        bluetoothScanner.startScan(targetRelayServiceId)
+                        val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
+                        consoleOutput(
+                            "device discovery time ${stopwatch.stop()} ms", outputBuilder
+                        )
+                        bluetoothScanner.stopScan()
+
+                        val relayService =
+                            GattService.createRelayService(testNodeIndex) { _, _, value ->
+                                bluetoothClientService.connect(targetDevice.id)
+
+                                val connectedDevice =
+                                    bluetoothClientService.deviceConnectionEvent.first()
+                                consoleOutput(
+                                    "device connection time ${stopwatch.stop()} ms", outputBuilder
+                                )
+
+                                stopwatch.start()
+                                connectedDevice.discoverServices()
+                                consoleOutput(
+                                    "service discovery time ${stopwatch.stop()} ms", outputBuilder
+                                )
+
+                                sendRandomData(
+                                    connectedDevice,
+                                    outputBuilder,
+                                    targetRelayServiceId,
+                                    RELAY_WRITE_CHARACTERISTIC_UUID
+                                )
+
+                                connectedDevice.close()
+                            }
+                        consoleOutput("Starting service ${relayService.serviceUUID}", outputBuilder)
+                        gattService.startServer(relayService)
                     }
 
                     TestRole.C -> {
