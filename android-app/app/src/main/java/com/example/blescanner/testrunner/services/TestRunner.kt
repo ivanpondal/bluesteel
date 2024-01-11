@@ -240,6 +240,8 @@ class TestRunner(
                         )
                         bluetoothScanner.stopScan()
 
+                        var relayCount = 0
+
                         val relayService =
                             GattService.createRelayService(testNodeIndex) { _, _, value ->
                                 bluetoothClientService.connect(targetDevice.id)
@@ -257,19 +259,30 @@ class TestRunner(
                                 )
 
                                 stopwatch.start()
-                                val mtu = connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
+                                val mtu =
+                                    connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
                                 _mtu.emit(mtu)
                                 consoleOutput(
-                                    "mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder
+                                    "mtu $mtu bytes, request time ${stopwatch.stop()} ms",
+                                    outputBuilder
                                 )
-                                sendRandomData(
+
+                                stopwatch.start()
+                                sendData(
                                     connectedDevice,
-                                    outputBuilder,
-                                    23,
                                     targetRelayServiceId,
                                     RELAY_WRITE_CHARACTERISTIC_UUID,
-                                    1
+                                    value
                                 )
+                                consoleOutput(
+                                    "${relayCount}th relay write with response time ${stopwatch.stop()} ms",
+                                    outputBuilder
+                                )
+                                consoleOutput(
+                                    value.toString(StandardCharsets.UTF_8),
+                                    outputBuilder
+                                )
+                                relayCount++
 
                                 connectedDevice.close()
                             }
@@ -302,9 +315,10 @@ class TestRunner(
         var totalTimeSendingInMs = 0L
         var totalBytesSent = 0
         repeat(numberMessages) {
-            val randomMessage = randomArray(packetSize)
+            val indexBytes = it.toString().toByteArray(StandardCharsets.UTF_8)
+            val randomMessage = randomArray(packetSize - indexBytes.size)
             stopwatch.start()
-            session.writeWithResponse(writeService, writeCharacteristic, randomMessage)
+            sendData(session, writeService, writeCharacteristic, indexBytes + randomMessage)
             val timeSendingInMs = stopwatch.stop()
 
             consoleOutput(
@@ -317,5 +331,14 @@ class TestRunner(
 
             _packetsSent.emit(packetsSent.value + 1)
         }
+    }
+
+    private suspend fun sendData(
+        session: BluetoothSession,
+        writeService: UUID,
+        writeCharacteristic: UUID,
+        message: ByteArray
+    ) {
+        session.writeWithResponse(writeService, writeCharacteristic, message)
     }
 }

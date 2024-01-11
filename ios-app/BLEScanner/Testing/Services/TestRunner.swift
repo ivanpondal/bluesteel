@@ -155,7 +155,7 @@ class TestRunner {
                     try negotiateMtu(fromDeviceWithId: connectedPeripheral.identifier)
 
                     try await sendData(toDeviceWithId: connectedPeripheral.identifier,
-                                       serviceId: TestCase.relayServiceUUID, characteristicId: TestCase.relayWriteCharacteristicUUID, packetSize: 25, numberMessages: 1)
+                                       serviceId: TestCase.relayServiceUUID, characteristicId: TestCase.relayWriteCharacteristicUUID, packetSize: 25, numberMessages: 10)
 
                     try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
                 default:
@@ -189,15 +189,19 @@ class TestRunner {
     fileprivate func sendData(toDeviceWithId deviceId: UUID, serviceId: CBUUID, characteristicId: CBUUID,
                               packetSize: Int, numberMessages: Int = 100) async throws {
         for i in 0..<numberMessages {
+            guard var indexData = String(i).data(using: .utf8) else {
+                return
+            }
             let data = try await stopwatch.measure {
-                generateRandomBytes(count: packetSize)
+                generateRandomBytes(count: packetSize - indexData.count)
             } onStop: { console(print: "\(i)th random bytes generation time \($0) ms") }
+            indexData.append(data)
 
             let _ = try await stopwatch.measure {
                 let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: deviceId,
                                                                    serviceId: serviceId,
                                                                    characteristicId: characteristicId,
-                                                                   data: data)
+                                                                   data: indexData)
             } onStop: { sendTimeInMs in
                 totalTimeSendingInMs += sendTimeInMs
                 totalBytesSent += data.count
