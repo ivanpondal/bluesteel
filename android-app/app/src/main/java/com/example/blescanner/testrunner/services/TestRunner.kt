@@ -244,6 +244,7 @@ class TestRunner(
 
                         val relayService =
                             GattService.createRelayService(testNodeIndex) { _, _, value ->
+                                stopwatch.start()
                                 bluetoothClientService.connect(targetDevice.id)
 
                                 val connectedDevice =
