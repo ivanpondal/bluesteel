@@ -54,7 +54,7 @@ import com.example.blescanner.scanner.DeviceListViewModel
 import com.example.blescanner.scanner.repository.ConnectedDeviceRepository
 import com.example.blescanner.scanner.repository.ScannedDeviceRepository
 import com.example.blescanner.scanner.service.BluetoothClientService
-import com.example.blescanner.scanner.service.BluetoothConstants
+import com.example.blescanner.advertiser.BluetoothConstants
 import com.example.blescanner.scanner.service.BluetoothScanner
 import com.example.blescanner.testrunner.TestCaseList
 import com.example.blescanner.testrunner.TestCaseListViewModel

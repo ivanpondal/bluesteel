@@ -2,18 +2,18 @@ package com.example.blescanner.testrunner.services
 
 import android.annotation.SuppressLint
 import android.util.Log
+import com.example.blescanner.advertiser.BluetoothConstants
+import com.example.blescanner.advertiser.BluetoothConstants.RELAY_SERVICE_UUID
+import com.example.blescanner.advertiser.BluetoothConstants.RELAY_WRITE_CHARACTERISTIC_UUID
+import com.example.blescanner.advertiser.BluetoothConstants.WAKE_CHARACTERISTIC_UUID
+import com.example.blescanner.advertiser.BluetoothConstants.WAKE_SERVICE_UUID
+import com.example.blescanner.advertiser.BluetoothConstants.WRITE_CHARACTERISTIC_UUID
+import com.example.blescanner.advertiser.BluetoothConstants.WRITE_SERVICE_UUID
 import com.example.blescanner.advertiser.BluetoothGattService
 import com.example.blescanner.advertiser.GattService
 import com.example.blescanner.measurements.Stopwatch
 import com.example.blescanner.model.BluetoothSession
 import com.example.blescanner.scanner.service.BluetoothClientService
-import com.example.blescanner.scanner.service.BluetoothConstants
-import com.example.blescanner.scanner.service.BluetoothConstants.RELAY_SERVICE_UUID
-import com.example.blescanner.scanner.service.BluetoothConstants.RELAY_WRITE_CHARACTERISTIC_UUID
-import com.example.blescanner.scanner.service.BluetoothConstants.WAKE_CHARACTERISTIC_UUID
-import com.example.blescanner.scanner.service.BluetoothConstants.WAKE_SERVICE_UUID
-import com.example.blescanner.scanner.service.BluetoothConstants.WRITE_CHARACTERISTIC_UUID
-import com.example.blescanner.scanner.service.BluetoothConstants.WRITE_SERVICE_UUID
 import com.example.blescanner.scanner.service.BluetoothScanner
 import com.example.blescanner.testrunner.model.TestCaseId
 import com.example.blescanner.testrunner.model.TestRole

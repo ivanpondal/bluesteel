@@ -1,6 +1,5 @@
-package com.example.blescanner.scanner.service
+package com.example.blescanner.advertiser
 
-import com.example.blescanner.advertiser.GattService
 import java.util.UUID
 
 object BluetoothConstants {

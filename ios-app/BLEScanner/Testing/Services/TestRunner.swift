@@ -71,7 +71,7 @@ class TestRunner {
                 try negotiateMtu(fromDeviceWithId: targetDevice.id)
 
                 try await sendData(toDeviceWithId: targetDevice.id,
-                                   serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
+                                   serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, packetSize: mtu)
 
                 try bluetoothRadio.disconnect(fromPeripheralWithId: targetDevice.id)
             case .SR_OW_2:
@@ -89,7 +89,7 @@ class TestRunner {
                 try negotiateMtu(fromDeviceWithId: connectedPeripheral.identifier)
 
                 try await sendData(toDeviceWithId: connectedPeripheral.identifier,
-                                   serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
+                                   serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, packetSize: mtu)
 
                 try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
             case .SR_OW_3:
@@ -132,11 +132,35 @@ class TestRunner {
 
                             try await sendData(toDeviceWithId: connectedPeripheral.identifier,
                                                serviceId: TestCase.writeTestServiceUUID,
-                                               characteristicId: TestCase.writeTestCharacteristicUUID)
+                                               characteristicId: TestCase.writeTestCharacteristicUUID, packetSize: mtu)
 
                             try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
                         }
                     }, withLocalName: UIDevice.current.name)
+                }
+            case .SR_OW_5:
+                switch testCase.role {
+                case .A:
+                    let targetPeripheral = try await stopwatch.measure {
+                        await bluetoothRadio.discover(peripheralWithService: TestCase.relayServiceUUID)
+                    } onStop: { console(print: "target device discovery time \($0) ms") }
+
+                    let connectedPeripheral = try await stopwatch.measure {
+                        try await bluetoothRadio.connect(toPeripheralWithId: targetPeripheral.identifier)
+                    } onStop: { console(print: "target device connection time \($0) ms") }
+
+                    try await discoverWriteCharacteristic(withId: TestCase.relayWriteCharacteristicUUID,
+                                                          fromServiceWithId: TestCase.relayServiceUUID, onDeviceWithId: connectedPeripheral.identifier)
+
+                    try negotiateMtu(fromDeviceWithId: connectedPeripheral.identifier)
+
+                    try await sendData(toDeviceWithId: connectedPeripheral.identifier,
+                                       serviceId: TestCase.relayServiceUUID, characteristicId: TestCase.relayWriteCharacteristicUUID, packetSize: 25, numberMessages: 1)
+
+                    try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
+                default:
+                    console(print: "NOT IMPLEMENTED")
+
                 }
             }
         } catch {
@@ -162,10 +186,11 @@ class TestRunner {
         console(print: "mtu \(mtuWithResponse) bytes with response")
     }
 
-    fileprivate func sendData(toDeviceWithId deviceId: UUID, serviceId: CBUUID, characteristicId: CBUUID) async throws {
-        for i in 0..<100 {
+    fileprivate func sendData(toDeviceWithId deviceId: UUID, serviceId: CBUUID, characteristicId: CBUUID,
+                              packetSize: Int, numberMessages: Int = 100) async throws {
+        for i in 0..<numberMessages {
             let data = try await stopwatch.measure {
-                generateRandomBytes(count: mtu)
+                generateRandomBytes(count: packetSize)
             } onStop: { console(print: "\(i)th random bytes generation time \($0) ms") }
 
             let _ = try await stopwatch.measure {

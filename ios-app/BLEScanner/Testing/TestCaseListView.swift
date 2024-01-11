@@ -63,6 +63,14 @@ struct TestCaseListView: View {
                             Text("Background").tag(TestCaseRole.B)
                         }.pickerStyle(.menu)
                     }.fixedSize().padding(.top, 24)
+                case .SR_OW_5:
+                    HStack(){
+                        Text("Role")
+                        Divider()
+                        Picker("", selection: $selectedRole){
+                            Text("Sender").tag(TestCaseRole.A)
+                        }.pickerStyle(.menu)
+                    }.fixedSize().padding(.top, 24)
                 }
                 Spacer()
                 HStack{

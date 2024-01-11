@@ -1,6 +1,5 @@
 package com.example.blescanner.advertiser
 
-import com.example.blescanner.scanner.service.BluetoothConstants
 import java.util.UUID
 
 class GattService(
