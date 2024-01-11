@@ -78,7 +78,13 @@ class TestRunner(
                     it.discoverServices()
                     consoleOutput("service discovery time ${stopwatch.stop()} ms", outputBuilder)
 
-                    sendRandomData(session, outputBuilder)
+                    stopwatch.start()
+                    val mtu = session.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
+                    _mtu.emit(mtu)
+                    consoleOutput(
+                        "mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder
+                    )
+                    sendRandomData(session, outputBuilder, mtu)
                     _state.emit("FINISHED $CHECK_EMOJI")
                 }
             }
@@ -150,7 +156,13 @@ class TestRunner(
                                 "service discovery time ${stopwatch.stop()} ms", outputBuilder
                             )
 
-                            sendRandomData(connectedDevice, outputBuilder)
+                            stopwatch.start()
+                            val mtu = connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
+                            _mtu.emit(mtu)
+                            consoleOutput(
+                                "mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder
+                            )
+                            sendRandomData(connectedDevice, outputBuilder, mtu)
 
                             connectedDevice.close()
                         })
@@ -192,11 +204,19 @@ class TestRunner(
                             "service discovery time ${stopwatch.stop()} ms", outputBuilder
                         )
 
+                        stopwatch.start()
+                        val mtu = connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
+                        _mtu.emit(mtu)
+                        consoleOutput(
+                            "mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder
+                        )
                         sendRandomData(
                             connectedDevice,
                             outputBuilder,
+                            23,
                             RELAY_SERVICE_UUID,
-                            RELAY_WRITE_CHARACTERISTIC_UUID
+                            RELAY_WRITE_CHARACTERISTIC_UUID,
+                            1
                         )
 
                         connectedDevice.close()
@@ -236,11 +256,19 @@ class TestRunner(
                                     "service discovery time ${stopwatch.stop()} ms", outputBuilder
                                 )
 
+                                stopwatch.start()
+                                val mtu = connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
+                                _mtu.emit(mtu)
+                                consoleOutput(
+                                    "mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder
+                                )
                                 sendRandomData(
                                     connectedDevice,
                                     outputBuilder,
+                                    23,
                                     targetRelayServiceId,
-                                    RELAY_WRITE_CHARACTERISTIC_UUID
+                                    RELAY_WRITE_CHARACTERISTIC_UUID,
+                                    1
                                 )
 
                                 connectedDevice.close()
@@ -266,19 +294,15 @@ class TestRunner(
     private suspend fun sendRandomData(
         session: BluetoothSession,
         outputBuilder: StringBuilder,
+        packetSize: Int,
         writeService: UUID = WRITE_SERVICE_UUID,
-        writeCharacteristic: UUID = WRITE_CHARACTERISTIC_UUID
+        writeCharacteristic: UUID = WRITE_CHARACTERISTIC_UUID,
+        numberMessages: Int = 100
     ) {
-        stopwatch.start()
-        val mtu = session.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
-        _mtu.emit(mtu)
-        consoleOutput(
-            "mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder
-        )
         var totalTimeSendingInMs = 0L
         var totalBytesSent = 0
-        repeat(100) {
-            val randomMessage = randomArray(mtu)
+        repeat(numberMessages) {
+            val randomMessage = randomArray(packetSize)
             stopwatch.start()
             session.writeWithResponse(writeService, writeCharacteristic, randomMessage)
             val timeSendingInMs = stopwatch.stop()
