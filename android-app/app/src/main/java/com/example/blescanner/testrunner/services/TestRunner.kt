@@ -225,25 +225,24 @@ class TestRunner(
                     TestRole.B -> {
                         consoleOutput("RELAY", outputBuilder)
 
-                        stopwatch.start()
-                        consoleOutput(
-                            "Scanning for device with relay service...", outputBuilder
-                        )
-                        val targetRelayServiceId = GattService.getRelayServiceIdWithNodeIndex(
-                            nodeIndex = testNodeIndex.inc()
-
-                        )
-                        bluetoothScanner.startScan(targetRelayServiceId)
-                        val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
-                        consoleOutput(
-                            "device discovery time ${stopwatch.stop()} ms", outputBuilder
-                        )
-                        bluetoothScanner.stopScan()
-
                         var relayCount = 0
 
                         val relayService =
                             GattService.createRelayService(testNodeIndex) { _, _, value ->
+                                stopwatch.start()
+                                consoleOutput(
+                                    "Scanning for device with relay service...", outputBuilder
+                                )
+                                val targetRelayServiceId = GattService.getRelayServiceIdWithNodeIndex(
+                                    nodeIndex = testNodeIndex.inc()
+
+                                )
+                                bluetoothScanner.startScan(targetRelayServiceId)
+                                val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
+                                consoleOutput(
+                                    "device discovery time ${stopwatch.stop()} ms", outputBuilder
+                                )
+                                bluetoothScanner.stopScan()
                                 stopwatch.start()
                                 bluetoothClientService.connect(targetDevice.id)
 
