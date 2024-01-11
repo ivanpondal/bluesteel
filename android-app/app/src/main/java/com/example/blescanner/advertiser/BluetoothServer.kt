@@ -18,6 +18,7 @@ import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
@@ -76,7 +77,7 @@ class BluetoothServer(
 
             if (device !== null && characteristic !== null && value !== null) {
                 writeHandlers[characteristic.uuid]?.let { writeHandler ->
-                    coroutineScope.launch {
+                    runBlocking {
                         writeHandler(
                             device.address,
                             offset,
