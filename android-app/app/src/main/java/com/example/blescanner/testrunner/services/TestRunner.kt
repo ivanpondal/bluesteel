@@ -227,46 +227,47 @@ class TestRunner(
 
                         var relayCount = 0
 
+                        stopwatch.start()
+                        consoleOutput(
+                            "Scanning for device with relay service...", outputBuilder
+                        )
+                        val targetRelayServiceId = GattService.getRelayServiceIdWithNodeIndex(
+                            nodeIndex = testNodeIndex.inc()
+
+                        )
+                        bluetoothScanner.startScan(targetRelayServiceId)
+                        val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
+                        consoleOutput(
+                            "device discovery time ${stopwatch.stop()} ms", outputBuilder
+                        )
+                        bluetoothScanner.stopScan()
+
+                        stopwatch.start()
+                        bluetoothClientService.connect(targetDevice.id)
+
+                        val connectedDevice =
+                            bluetoothClientService.deviceConnectionEvent.first()
+                        consoleOutput(
+                            "device connection time ${stopwatch.stop()} ms", outputBuilder
+                        )
+
+                        stopwatch.start()
+                        connectedDevice.discoverServices()
+                        consoleOutput(
+                            "service discovery time ${stopwatch.stop()} ms", outputBuilder
+                        )
+
+                        stopwatch.start()
+                        val mtu =
+                            connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
+                        _mtu.emit(mtu)
+                        consoleOutput(
+                            "mtu $mtu bytes, request time ${stopwatch.stop()} ms",
+                            outputBuilder
+                        )
+
                         val relayService =
                             GattService.createRelayService(testNodeIndex) { _, _, value ->
-                                stopwatch.start()
-                                consoleOutput(
-                                    "Scanning for device with relay service...", outputBuilder
-                                )
-                                val targetRelayServiceId = GattService.getRelayServiceIdWithNodeIndex(
-                                    nodeIndex = testNodeIndex.inc()
-
-                                )
-                                bluetoothScanner.startScan(targetRelayServiceId)
-                                val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
-                                consoleOutput(
-                                    "device discovery time ${stopwatch.stop()} ms", outputBuilder
-                                )
-                                bluetoothScanner.stopScan()
-                                stopwatch.start()
-                                bluetoothClientService.connect(targetDevice.id)
-
-                                val connectedDevice =
-                                    bluetoothClientService.deviceConnectionEvent.first()
-                                consoleOutput(
-                                    "device connection time ${stopwatch.stop()} ms", outputBuilder
-                                )
-
-                                stopwatch.start()
-                                connectedDevice.discoverServices()
-                                consoleOutput(
-                                    "service discovery time ${stopwatch.stop()} ms", outputBuilder
-                                )
-
-                                stopwatch.start()
-                                val mtu =
-                                    connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
-                                _mtu.emit(mtu)
-                                consoleOutput(
-                                    "mtu $mtu bytes, request time ${stopwatch.stop()} ms",
-                                    outputBuilder
-                                )
-
                                 stopwatch.start()
                                 sendData(
                                     connectedDevice,
@@ -283,8 +284,6 @@ class TestRunner(
                                     outputBuilder
                                 )
                                 relayCount++
-
-                                connectedDevice.close()
                             }
                         consoleOutput("Starting service ${relayService.serviceUUID}", outputBuilder)
                         gattService.startServer(relayService)

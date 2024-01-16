@@ -77,7 +77,10 @@ class BluetoothSession(
                         characteristic.value = message
                         gatt.writeCharacteristic(characteristic)
                     }
-                    writeWithResponseChannel.receive()
+
+                    if (!writeWithResponseChannel.receive()) {
+                        throw RuntimeException("Failed write")
+                    }
                 }
             }
         }

@@ -155,7 +155,7 @@ class TestRunner {
                     try negotiateMtu(fromDeviceWithId: connectedPeripheral.identifier)
 
                     try await sendData(toDeviceWithId: connectedPeripheral.identifier,
-                                       serviceId: TestCase.relayServiceUUID, characteristicId: TestCase.relayWriteCharacteristicUUID, packetSize: 25, numberMessages: 1)
+                                       serviceId: TestCase.relayServiceUUID, characteristicId: TestCase.relayWriteCharacteristicUUID, packetSize: 25, numberMessages: 100)
 
                     try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
                 default:
