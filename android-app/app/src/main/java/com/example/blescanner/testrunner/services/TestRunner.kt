@@ -79,7 +79,7 @@ class TestRunner(
                     consoleOutput("service discovery time ${stopwatch.stop()} ms", outputBuilder)
 
                     stopwatch.start()
-                    val mtu = session.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
+                    val mtu = session.requestMtu(BluetoothSession.MAX_ATT_MTU)
                     _mtu.emit(mtu)
                     consoleOutput(
                         "mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder
@@ -157,7 +157,7 @@ class TestRunner(
                             )
 
                             stopwatch.start()
-                            val mtu = connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
+                            val mtu = connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU)
                             _mtu.emit(mtu)
                             consoleOutput(
                                 "mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder
@@ -205,7 +205,7 @@ class TestRunner(
                         )
 
                         stopwatch.start()
-                        val mtu = connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
+                        val mtu = connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU)
                         _mtu.emit(mtu)
                         consoleOutput(
                             "mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder
@@ -213,10 +213,10 @@ class TestRunner(
                         sendRandomData(
                             connectedDevice,
                             outputBuilder,
-                            23,
+                            mtu+10,
                             RELAY_SERVICE_UUID,
                             RELAY_WRITE_CHARACTERISTIC_UUID,
-                            1
+                            5
                         )
 
                         connectedDevice.close()
@@ -259,7 +259,7 @@ class TestRunner(
 
                         stopwatch.start()
                         val mtu =
-                            connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
+                            connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU)
                         _mtu.emit(mtu)
                         consoleOutput(
                             "mtu $mtu bytes, request time ${stopwatch.stop()} ms",

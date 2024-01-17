@@ -44,12 +44,17 @@ class BluetoothSession(
     private val mtuRequestChannel = Channel<Int>()
     private val writeWithResponseChannel = Channel<Boolean>()
 
+    var currentMtu: Int = DEFAULT_ATT_MTU
+        private set
+
     @SuppressLint("MissingPermission")
     suspend fun requestMtu(value: Int): Int {
-        return bluetoothGatt?.let {
+        val mtu = bluetoothGatt?.let {
             it.requestMtu(value)
             mtuRequestChannel.receive()
         } ?: DEFAULT_ATT_MTU
+        currentMtu = mtu - 3
+        return currentMtu
     }
 
     @SuppressLint("MissingPermission")
