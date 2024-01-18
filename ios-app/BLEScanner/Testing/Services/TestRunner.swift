@@ -137,6 +137,7 @@ class TestRunner {
                             try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
                         }
                     }, withLocalName: UIDevice.current.name)
+                default: break
                 }
             case .SR_OW_5:
                 switch testCase.role {

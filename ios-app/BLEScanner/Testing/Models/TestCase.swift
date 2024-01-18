@@ -24,6 +24,7 @@ enum TestCaseId : String, CaseIterable {
 enum TestCaseRole : String, CaseIterable {
     case A
     case B
+    case C
 }
 
 struct TestCase : Identifiable, Equatable {
