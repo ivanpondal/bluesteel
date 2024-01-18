@@ -30,6 +30,7 @@ enum TestCaseRole : String, CaseIterable {
 struct TestCase : Identifiable, Equatable {
     let id : TestCaseId
     let role: TestCaseRole
+    let nodeIndex: Int8
 
 }
 
@@ -44,7 +45,7 @@ extension TestCase {
     static let relayWriteCharacteristicUUID = CBUUID(string: "FA33E13F-B248-4F10-BBE0-76698425F27C")
 
     static var sampleData: [TestCase] {
-        [TestCase(id: .SR_OW_1, role: TestCaseRole.A)]
+        [TestCase(id: .SR_OW_1, role: TestCaseRole.A, nodeIndex: 0)]
     }
 
     static func createWriteTestService() -> PeripheralService {
@@ -56,6 +57,12 @@ extension TestCase {
     static func createWakeService(onWake: @escaping () -> Void) -> PeripheralService {
         return PeripheralService(serviceId: wakeServiceUUID, characteristicId: wakeCharacteristicUUID, writeHandler: {central, data in
             onWake()
+        })
+    }
+
+    static func createRelayService(nodeIndex: Int8, onRecieve: @escaping (Data) -> Void) -> PeripheralService {
+        return PeripheralService(serviceId: relayServiceUUID, characteristicId: relayWriteCharacteristicUUID, writeHandler: {central, data in
+            onRecieve(data)
         })
     }
 }

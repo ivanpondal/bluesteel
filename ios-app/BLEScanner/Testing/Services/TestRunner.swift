@@ -142,6 +142,7 @@ class TestRunner {
             case .SR_OW_5:
                 switch testCase.role {
                 case .A:
+                    console(print: "Sender")
                     let targetPeripheral = try await stopwatch.measure {
                         await bluetoothRadio.discover(peripheralWithService: TestCase.relayServiceUUID)
                     } onStop: { console(print: "target device discovery time \($0) ms") }
@@ -159,9 +160,14 @@ class TestRunner {
                                        serviceId: TestCase.relayServiceUUID, characteristicId: TestCase.relayWriteCharacteristicUUID, packetSize: mtu+10, numberMessages: 100)
 
                     try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
-                default:
-                    console(print: "NOT IMPLEMENTED")
+                case .B:
+                    console(print: "Relay")
+                case .C:
+                    console(print: "Receiver")
 
+                    try await bluetoothRadio.publish(service: TestCase.createRelayService(nodeIndex: testCase.nodeIndex) { [self] data in
+                        console(print: "relayed: \(String(bytes: data, encoding: .ascii)!)")
+                    }, withLocalName: UIDevice.current.name)
                 }
             }
         } catch {

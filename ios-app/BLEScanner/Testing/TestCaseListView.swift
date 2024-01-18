@@ -15,7 +15,7 @@ struct TestCaseListView: View {
     @State private var selectedTestCase: TestCaseId = TestCaseId.SR_OW_1
 
     @State private var selectedRole: TestCaseRole = .A
-    @State private var selectedNodeIndex: Int = 0
+    @State private var selectedNodeIndex: Int8 = 0
 
     func NavigationViewWrapper(@ViewBuilder content: () -> some View) -> some View {
         if #available(iOS 16, *) {
@@ -64,7 +64,8 @@ struct TestCaseListView: View {
                                options: TestCaseId.allCases.map { ($0, $0.displayName())})
                 NavigationLink(destination: TestCaseView(activeTestCase: TestCase(
                     id: selectedTestCase,
-                    role: selectedRole), bluetoothRadio: bluetoothRadio, targetDevice: connectedDevices.filter({selectedDevices[$0.id] == true}).first
+                    role: selectedRole,
+                    nodeIndex: selectedNodeIndex), bluetoothRadio: bluetoothRadio, targetDevice: connectedDevices.filter({selectedDevices[$0.id] == true}).first
                 )) {
                     Button("Run", action: {}).allowsHitTesting(false)
                 }
