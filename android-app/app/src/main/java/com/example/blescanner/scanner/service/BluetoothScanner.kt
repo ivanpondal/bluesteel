@@ -42,8 +42,20 @@ class BluetoothScanner(
             )
 
             coroutineScope.launch {
+                Log.d(
+                    BluetoothScanner::class.simpleName,
+                    "Found device matching scan filter: $scannedDevice"
+                )
                 _scannedDeviceEvent.emit(scannedDevice)
             }
+        }
+
+        override fun onBatchScanResults(results: MutableList<ScanResult>?) {
+            super.onBatchScanResults(results)
+            Log.d(
+                BluetoothScanner::class.simpleName,
+                "Batch scan?"
+            )
         }
 
         override fun onScanFailed(errorCode: Int) {
@@ -66,7 +78,9 @@ class BluetoothScanner(
 
         bluetoothLeScanner.startScan(
             listOf(ScanFilter.Builder().setServiceUuid(ParcelUuid(serviceUUID)).build()),
-            ScanSettings.Builder().build(),
+            ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+                .build(),
             scanCallback
         )
     }

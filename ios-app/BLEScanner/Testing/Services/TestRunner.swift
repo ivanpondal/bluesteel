@@ -179,6 +179,7 @@ class TestRunner {
                     try negotiateMtu(fromDeviceWithId: connectedPeripheral.identifier)
 
                     try await bluetoothRadio.publish(service: TestCase.createRelayService(nodeIndex: testCase.nodeIndex) { [self] data in
+                        let semaphore = DispatchSemaphore(value: 0)
                         Task {
                             let _ = try await stopwatch.measure {
                                 let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: connectedPeripheral.identifier,
@@ -188,7 +189,9 @@ class TestRunner {
                             } onStop: { sendTimeInMs in
                                 console(print: "relayed with response time \(sendTimeInMs) ms: \(String(bytes: data, encoding: .ascii)!)")
                             }
+                            semaphore.signal()
                         }
+                        semaphore.wait()
                     }, withLocalName: UIDevice.current.name)
                 case .C:
                     console(print: "Receiver")

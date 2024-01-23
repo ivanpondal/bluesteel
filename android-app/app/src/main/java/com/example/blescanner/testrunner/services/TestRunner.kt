@@ -173,15 +173,16 @@ class TestRunner(
             }
 
             TestCaseId.SR_OW_5 -> {
-                // do cool stuff
                 consoleOutput("I'm role $testRole with node index $testNodeIndex", outputBuilder)
 
                 when (testRole) {
                     TestRole.A -> {
                         consoleOutput("SENDER", outputBuilder)
+
                         stopwatch.start()
                         consoleOutput(
-                            "Scanning for device with relay service...", outputBuilder
+                            "Scanning for device with relay service... $RELAY_SERVICE_UUID",
+                            outputBuilder
                         )
                         bluetoothScanner.startScan(RELAY_SERVICE_UUID)
                         val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
@@ -213,7 +214,7 @@ class TestRunner(
                         sendRandomData(
                             connectedDevice,
                             outputBuilder,
-                            mtu+10,
+                            mtu + 10,
                             RELAY_SERVICE_UUID,
                             RELAY_WRITE_CHARACTERISTIC_UUID,
                             5
@@ -228,12 +229,13 @@ class TestRunner(
                         var relayCount = 0
 
                         stopwatch.start()
-                        consoleOutput(
-                            "Scanning for device with relay service...", outputBuilder
-                        )
                         val targetRelayServiceId = GattService.getRelayServiceIdWithNodeIndex(
                             nodeIndex = testNodeIndex.inc()
 
+                        )
+                        consoleOutput(
+                            "Scanning for device with relay service $targetRelayServiceId",
+                            outputBuilder
                         )
                         bluetoothScanner.startScan(targetRelayServiceId)
                         val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
@@ -292,6 +294,13 @@ class TestRunner(
                     TestRole.C -> {
                         consoleOutput("RECEIVER", outputBuilder)
 
+                        consoleOutput(
+                            "Starting service ${
+                                GattService.getRelayServiceIdWithNodeIndex(
+                                    testNodeIndex
+                                )
+                            }", outputBuilder
+                        )
                         gattService.startServer(GattService.createRelayService(testNodeIndex) { _, _, value ->
                             consoleOutput(value.toString(StandardCharsets.UTF_8), outputBuilder)
                         })
