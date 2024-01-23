@@ -60,8 +60,13 @@ extension TestCase {
         })
     }
 
+    static func getRelayServiceId(withNodeIndex nodeIndex: Int8) -> CBUUID {
+        let lastDigit = String((relayServiceUUID.uuidString.last?.hexDigitValue ?? 0) + Int(nodeIndex))
+        return CBUUID(string: String(relayServiceUUID.uuidString.dropLast()).appending(lastDigit))
+    }
+
     static func createRelayService(nodeIndex: Int8, onRecieve: @escaping (Data) -> Void) -> PeripheralService {
-        return PeripheralService(serviceId: relayServiceUUID, characteristicId: relayWriteCharacteristicUUID, writeHandler: {central, data in
+        return PeripheralService(serviceId: getRelayServiceId(withNodeIndex: nodeIndex), characteristicId: relayWriteCharacteristicUUID, writeHandler: {central, data in
             onRecieve(data)
         })
     }

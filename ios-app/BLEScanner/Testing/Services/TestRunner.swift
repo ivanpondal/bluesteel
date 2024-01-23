@@ -162,6 +162,34 @@ class TestRunner {
                     try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
                 case .B:
                     console(print: "Relay")
+
+                    let targetRelayServiceId: CBUUID = TestCase.getRelayServiceId(withNodeIndex: testCase.nodeIndex.advanced(by: 1))
+
+                    let targetPeripheral = try await stopwatch.measure {
+                        await bluetoothRadio.discover(peripheralWithService: targetRelayServiceId)
+                    } onStop: { console(print: "target device discovery time \($0) ms") }
+
+                    let connectedPeripheral = try await stopwatch.measure {
+                        try await bluetoothRadio.connect(toPeripheralWithId: targetPeripheral.identifier)
+                    } onStop: { console(print: "target device connection time \($0) ms") }
+
+                    try await discoverWriteCharacteristic(withId: TestCase.relayWriteCharacteristicUUID,
+                                                          fromServiceWithId: targetRelayServiceId, onDeviceWithId: connectedPeripheral.identifier)
+
+                    try negotiateMtu(fromDeviceWithId: connectedPeripheral.identifier)
+
+                    try await bluetoothRadio.publish(service: TestCase.createRelayService(nodeIndex: testCase.nodeIndex) { [self] data in
+                        Task {
+                            let _ = try await stopwatch.measure {
+                                let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: connectedPeripheral.identifier,
+                                                                                   serviceId: targetRelayServiceId,
+                                                                                   characteristicId: TestCase.relayWriteCharacteristicUUID,
+                                                                                   data: data)
+                            } onStop: { sendTimeInMs in
+                                console(print: "relayed with response time \(sendTimeInMs) ms: \(String(bytes: data, encoding: .ascii)!)")
+                            }
+                        }
+                    }, withLocalName: UIDevice.current.name)
                 case .C:
                     console(print: "Receiver")
 
