@@ -22,6 +22,7 @@ class TestCaseRunViewModel(
     private val bluetoothClientService: BluetoothClientService,
     var testCase: TestCaseId,
     var testRole: TestRole,
+    var testNodeIndex: UByte,
     var devices: Set<String>
 ) :
     ViewModel() {
@@ -49,6 +50,7 @@ class TestCaseRunViewModel(
             bluetoothClientService: BluetoothClientService,
             testCase: TestCaseId,
             testRole: TestRole,
+            testNodeIndex: UByte,
             devices: Set<String>
         ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
@@ -61,6 +63,7 @@ class TestCaseRunViewModel(
                         bluetoothClientService,
                         testCase,
                         testRole,
+                        testNodeIndex,
                         devices
                     ) as T
                 }
@@ -76,6 +79,7 @@ class TestCaseRunViewModel(
                 SystemStopwatch(),
                 testCase,
                 testRole,
+                testNodeIndex,
                 gattService,
                 bluetoothScanner,
                 bluetoothClientService

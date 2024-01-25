@@ -2,22 +2,26 @@ package com.example.blescanner.testrunner.services
 
 import android.annotation.SuppressLint
 import android.util.Log
+import com.example.blescanner.advertiser.BluetoothConstants
+import com.example.blescanner.advertiser.BluetoothConstants.RELAY_SERVICE_UUID
+import com.example.blescanner.advertiser.BluetoothConstants.RELAY_WRITE_CHARACTERISTIC_UUID
+import com.example.blescanner.advertiser.BluetoothConstants.WAKE_CHARACTERISTIC_UUID
+import com.example.blescanner.advertiser.BluetoothConstants.WAKE_SERVICE_UUID
+import com.example.blescanner.advertiser.BluetoothConstants.WRITE_CHARACTERISTIC_UUID
+import com.example.blescanner.advertiser.BluetoothConstants.WRITE_SERVICE_UUID
 import com.example.blescanner.advertiser.BluetoothGattService
 import com.example.blescanner.advertiser.GattService
 import com.example.blescanner.measurements.Stopwatch
 import com.example.blescanner.model.BluetoothSession
 import com.example.blescanner.scanner.service.BluetoothClientService
-import com.example.blescanner.scanner.service.BluetoothConstants
-import com.example.blescanner.scanner.service.BluetoothConstants.WAKE_CHARACTERISTIC_UUID
-import com.example.blescanner.scanner.service.BluetoothConstants.WAKE_SERVICE_UUID
-import com.example.blescanner.scanner.service.BluetoothConstants.WRITE_CHARACTERISTIC_UUID
-import com.example.blescanner.scanner.service.BluetoothConstants.WRITE_SERVICE_UUID
 import com.example.blescanner.scanner.service.BluetoothScanner
 import com.example.blescanner.testrunner.model.TestCaseId
 import com.example.blescanner.testrunner.model.TestRole
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import java.nio.charset.StandardCharsets
+import java.util.UUID
 import kotlin.random.Random
 
 class TestRunner(
@@ -25,6 +29,7 @@ class TestRunner(
     private val stopwatch: Stopwatch,
     private val testCase: TestCaseId,
     private val testRole: TestRole,
+    private val testNodeIndex: UByte,
     private val gattService: BluetoothGattService,
     private val bluetoothScanner: BluetoothScanner,
     private val bluetoothClientService: BluetoothClientService
@@ -73,7 +78,13 @@ class TestRunner(
                     it.discoverServices()
                     consoleOutput("service discovery time ${stopwatch.stop()} ms", outputBuilder)
 
-                    sendRandomData(session, outputBuilder)
+                    stopwatch.start()
+                    val mtu = session.requestMtu(BluetoothSession.MAX_ATT_MTU)
+                    _mtu.emit(mtu)
+                    consoleOutput(
+                        "mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder
+                    )
+                    sendRandomData(session, outputBuilder, mtu)
                     _state.emit("FINISHED $CHECK_EMOJI")
                 }
             }
@@ -100,22 +111,18 @@ class TestRunner(
 
                         val connectedDevice = bluetoothClientService.deviceConnectionEvent.first()
                         consoleOutput(
-                            "device connection time ${stopwatch.stop()} ms",
-                            outputBuilder
+                            "device connection time ${stopwatch.stop()} ms", outputBuilder
                         )
 
                         stopwatch.start()
                         connectedDevice.discoverServices()
                         consoleOutput(
-                            "service discovery time ${stopwatch.stop()} ms",
-                            outputBuilder
+                            "service discovery time ${stopwatch.stop()} ms", outputBuilder
                         )
 
                         stopwatch.start()
                         connectedDevice.writeWithResponse(
-                            WAKE_SERVICE_UUID,
-                            WAKE_CHARACTERISTIC_UUID,
-                            "WAKE".encodeToByteArray()
+                            WAKE_SERVICE_UUID, WAKE_CHARACTERISTIC_UUID, "WAKE".encodeToByteArray()
                         )
                         consoleOutput("send wake time ${stopwatch.stop()} ms", outputBuilder)
                     }
@@ -124,12 +131,13 @@ class TestRunner(
                         consoleOutput("BACKGROUND", outputBuilder)
                         gattService.startServer(GattService.createWakeService { _, _, _ ->
                             stopwatch.start()
-                            consoleOutput("Scanning for device with write service...", outputBuilder)
+                            consoleOutput(
+                                "Scanning for device with write service...", outputBuilder
+                            )
                             bluetoothScanner.startScan(WRITE_SERVICE_UUID)
                             val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
                             consoleOutput(
-                                "device discovery time ${stopwatch.stop()} ms",
-                                outputBuilder
+                                "device discovery time ${stopwatch.stop()} ms", outputBuilder
                             )
                             bluetoothScanner.stopScan()
 
@@ -139,18 +147,22 @@ class TestRunner(
                             val connectedDevice =
                                 bluetoothClientService.deviceConnectionEvent.first()
                             consoleOutput(
-                                "device connection time ${stopwatch.stop()} ms",
-                                outputBuilder
+                                "device connection time ${stopwatch.stop()} ms", outputBuilder
                             )
 
                             stopwatch.start()
                             connectedDevice.discoverServices()
                             consoleOutput(
-                                "service discovery time ${stopwatch.stop()} ms",
-                                outputBuilder
+                                "service discovery time ${stopwatch.stop()} ms", outputBuilder
                             )
 
-                            sendRandomData(connectedDevice, outputBuilder)
+                            stopwatch.start()
+                            val mtu = connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU)
+                            _mtu.emit(mtu)
+                            consoleOutput(
+                                "mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder
+                            )
+                            sendRandomData(connectedDevice, outputBuilder, mtu)
 
                             connectedDevice.close()
                         })
@@ -159,36 +171,166 @@ class TestRunner(
                     else -> throw RuntimeException("Invalid role for test")
                 }
             }
+
+            TestCaseId.SR_OW_5 -> {
+                consoleOutput("I'm role $testRole with node index $testNodeIndex", outputBuilder)
+
+                when (testRole) {
+                    TestRole.A -> {
+                        consoleOutput("SENDER", outputBuilder)
+
+                        stopwatch.start()
+                        consoleOutput(
+                            "Scanning for device with relay service... $RELAY_SERVICE_UUID",
+                            outputBuilder
+                        )
+                        bluetoothScanner.startScan(RELAY_SERVICE_UUID)
+                        val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
+                        consoleOutput(
+                            "device discovery time ${stopwatch.stop()} ms", outputBuilder
+                        )
+                        bluetoothScanner.stopScan()
+
+                        stopwatch.start()
+                        bluetoothClientService.connect(targetDevice.id)
+
+                        val connectedDevice = bluetoothClientService.deviceConnectionEvent.first()
+                        consoleOutput(
+                            "device connection time ${stopwatch.stop()} ms", outputBuilder
+                        )
+
+                        stopwatch.start()
+                        connectedDevice.discoverServices()
+                        consoleOutput(
+                            "service discovery time ${stopwatch.stop()} ms", outputBuilder
+                        )
+
+                        stopwatch.start()
+                        val mtu = connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU)
+                        _mtu.emit(mtu)
+                        consoleOutput(
+                            "mtu $mtu bytes, request time ${stopwatch.stop()} ms", outputBuilder
+                        )
+                        sendRandomData(
+                            connectedDevice,
+                            outputBuilder,
+                            mtu + 10,
+                            RELAY_SERVICE_UUID,
+                            RELAY_WRITE_CHARACTERISTIC_UUID,
+                            5
+                        )
+
+                        connectedDevice.close()
+                    }
+
+                    TestRole.B -> {
+                        consoleOutput("RELAY", outputBuilder)
+
+                        var relayCount = 0
+
+                        stopwatch.start()
+                        val targetRelayServiceId = GattService.getRelayServiceIdWithNodeIndex(
+                            nodeIndex = testNodeIndex.inc()
+
+                        )
+                        consoleOutput(
+                            "Scanning for device with relay service $targetRelayServiceId",
+                            outputBuilder
+                        )
+                        bluetoothScanner.startScan(targetRelayServiceId)
+                        val targetDevice = bluetoothScanner.scannedDeviceEvent.first()
+                        consoleOutput(
+                            "device discovery time ${stopwatch.stop()} ms", outputBuilder
+                        )
+                        bluetoothScanner.stopScan()
+
+                        stopwatch.start()
+                        bluetoothClientService.connect(targetDevice.id)
+
+                        val connectedDevice =
+                            bluetoothClientService.deviceConnectionEvent.first()
+                        consoleOutput(
+                            "device connection time ${stopwatch.stop()} ms", outputBuilder
+                        )
+
+                        stopwatch.start()
+                        connectedDevice.discoverServices()
+                        consoleOutput(
+                            "service discovery time ${stopwatch.stop()} ms", outputBuilder
+                        )
+
+                        stopwatch.start()
+                        val mtu =
+                            connectedDevice.requestMtu(BluetoothSession.MAX_ATT_MTU)
+                        _mtu.emit(mtu)
+                        consoleOutput(
+                            "mtu $mtu bytes, request time ${stopwatch.stop()} ms",
+                            outputBuilder
+                        )
+
+                        val relayService =
+                            GattService.createRelayService(testNodeIndex) { _, _, value ->
+                                stopwatch.start()
+                                sendData(
+                                    connectedDevice,
+                                    targetRelayServiceId,
+                                    RELAY_WRITE_CHARACTERISTIC_UUID,
+                                    value
+                                )
+                                consoleOutput(
+                                    "${relayCount}th relay write with response time ${stopwatch.stop()} ms",
+                                    outputBuilder
+                                )
+                                consoleOutput(
+                                    value.toString(StandardCharsets.UTF_8),
+                                    outputBuilder
+                                )
+                                relayCount++
+                            }
+                        consoleOutput("Starting service ${relayService.serviceUUID}", outputBuilder)
+                        gattService.startServer(relayService)
+                    }
+
+                    TestRole.C -> {
+                        consoleOutput("RECEIVER", outputBuilder)
+
+                        consoleOutput(
+                            "Starting service ${
+                                GattService.getRelayServiceIdWithNodeIndex(
+                                    testNodeIndex
+                                )
+                            }", outputBuilder
+                        )
+                        gattService.startServer(GattService.createRelayService(testNodeIndex) { _, _, value ->
+                            consoleOutput(value.toString(StandardCharsets.UTF_8), outputBuilder)
+                        })
+                    }
+                }
+            }
         }
         consoleOutput = outputBuilder.toString()
     }
 
+
     private suspend fun sendRandomData(
         session: BluetoothSession,
-        outputBuilder: StringBuilder
+        outputBuilder: StringBuilder,
+        packetSize: Int,
+        writeService: UUID = WRITE_SERVICE_UUID,
+        writeCharacteristic: UUID = WRITE_CHARACTERISTIC_UUID,
+        numberMessages: Int = 100
     ) {
-        stopwatch.start()
-        val mtu = session.requestMtu(BluetoothSession.MAX_ATT_MTU) - 3
-        _mtu.emit(mtu)
-        consoleOutput(
-            "mtu $mtu bytes, request time ${stopwatch.stop()} ms",
-            outputBuilder
-        )
         var totalTimeSendingInMs = 0L
         var totalBytesSent = 0
-        repeat(100) {
-            val randomMessage = randomArray(mtu)
+        repeat(numberMessages) {
+            val indexBytes = it.toString().toByteArray(StandardCharsets.UTF_8)
+            val randomMessage = randomArray(packetSize - indexBytes.size)
             stopwatch.start()
-            session.writeWithResponse(
-                WRITE_SERVICE_UUID,
-                WRITE_CHARACTERISTIC_UUID,
-                randomMessage
-            )
+            sendData(session, writeService, writeCharacteristic, indexBytes + randomMessage)
             val timeSendingInMs = stopwatch.stop()
 
             consoleOutput(
-                "${it}th write with response time $timeSendingInMs ms",
-                outputBuilder
+                "${it}th write with response time $timeSendingInMs ms", outputBuilder
             )
 
             totalTimeSendingInMs += timeSendingInMs
@@ -197,5 +339,14 @@ class TestRunner(
 
             _packetsSent.emit(packetsSent.value + 1)
         }
+    }
+
+    private suspend fun sendData(
+        session: BluetoothSession,
+        writeService: UUID,
+        writeCharacteristic: UUID,
+        message: ByteArray
+    ) {
+        session.writeWithResponse(writeService, writeCharacteristic, message)
     }
 }

@@ -71,7 +71,7 @@ class TestRunner {
                 try negotiateMtu(fromDeviceWithId: targetDevice.id)
 
                 try await sendData(toDeviceWithId: targetDevice.id,
-                                   serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
+                                   serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, packetSize: mtu)
 
                 try bluetoothRadio.disconnect(fromPeripheralWithId: targetDevice.id)
             case .SR_OW_2:
@@ -89,7 +89,7 @@ class TestRunner {
                 try negotiateMtu(fromDeviceWithId: connectedPeripheral.identifier)
 
                 try await sendData(toDeviceWithId: connectedPeripheral.identifier,
-                                   serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID)
+                                   serviceId: BluetoothRadio.serviceUUID, characteristicId: BluetoothRadio.chracteristicUUID, packetSize: mtu)
 
                 try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
             case .SR_OW_3:
@@ -132,10 +132,72 @@ class TestRunner {
 
                             try await sendData(toDeviceWithId: connectedPeripheral.identifier,
                                                serviceId: TestCase.writeTestServiceUUID,
-                                               characteristicId: TestCase.writeTestCharacteristicUUID)
+                                               characteristicId: TestCase.writeTestCharacteristicUUID, packetSize: mtu)
 
                             try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
                         }
+                    }, withLocalName: UIDevice.current.name)
+                default: break
+                }
+            case .SR_OW_5:
+                switch testCase.role {
+                case .A:
+                    console(print: "Sender")
+                    let targetPeripheral = try await stopwatch.measure {
+                        await bluetoothRadio.discover(peripheralWithService: TestCase.relayServiceUUID)
+                    } onStop: { console(print: "target device discovery time \($0) ms") }
+
+                    let connectedPeripheral = try await stopwatch.measure {
+                        try await bluetoothRadio.connect(toPeripheralWithId: targetPeripheral.identifier)
+                    } onStop: { console(print: "target device connection time \($0) ms") }
+
+                    try await discoverWriteCharacteristic(withId: TestCase.relayWriteCharacteristicUUID,
+                                                          fromServiceWithId: TestCase.relayServiceUUID, onDeviceWithId: connectedPeripheral.identifier)
+
+                    try negotiateMtu(fromDeviceWithId: connectedPeripheral.identifier)
+
+                    try await sendData(toDeviceWithId: connectedPeripheral.identifier,
+                                       serviceId: TestCase.relayServiceUUID, characteristicId: TestCase.relayWriteCharacteristicUUID, packetSize: mtu+10, numberMessages: 100)
+
+                    try bluetoothRadio.disconnect(fromPeripheralWithId: connectedPeripheral.identifier)
+                case .B:
+                    console(print: "Relay")
+
+                    let targetRelayServiceId: CBUUID = TestCase.getRelayServiceId(withNodeIndex: testCase.nodeIndex.advanced(by: 1))
+
+                    let targetPeripheral = try await stopwatch.measure {
+                        await bluetoothRadio.discover(peripheralWithService: targetRelayServiceId)
+                    } onStop: { console(print: "target device discovery time \($0) ms") }
+
+                    let connectedPeripheral = try await stopwatch.measure {
+                        try await bluetoothRadio.connect(toPeripheralWithId: targetPeripheral.identifier)
+                    } onStop: { console(print: "target device connection time \($0) ms") }
+
+                    try await discoverWriteCharacteristic(withId: TestCase.relayWriteCharacteristicUUID,
+                                                          fromServiceWithId: targetRelayServiceId, onDeviceWithId: connectedPeripheral.identifier)
+
+                    try negotiateMtu(fromDeviceWithId: connectedPeripheral.identifier)
+
+                    try await bluetoothRadio.publish(service: TestCase.createRelayService(nodeIndex: testCase.nodeIndex) { [self] data in
+                        let semaphore = DispatchSemaphore(value: 0)
+                        Task {
+                            let _ = try await stopwatch.measure {
+                                let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: connectedPeripheral.identifier,
+                                                                                   serviceId: targetRelayServiceId,
+                                                                                   characteristicId: TestCase.relayWriteCharacteristicUUID,
+                                                                                   data: data)
+                            } onStop: { sendTimeInMs in
+                                console(print: "relayed with response time \(sendTimeInMs) ms: \(String(bytes: data, encoding: .ascii)!)")
+                            }
+                            semaphore.signal()
+                        }
+                        semaphore.wait()
+                    }, withLocalName: UIDevice.current.name)
+                case .C:
+                    console(print: "Receiver")
+
+                    try await bluetoothRadio.publish(service: TestCase.createRelayService(nodeIndex: testCase.nodeIndex) { [self] data in
+                        console(print: "relayed: \(String(bytes: data, encoding: .ascii)!)")
                     }, withLocalName: UIDevice.current.name)
                 }
             }
@@ -162,17 +224,22 @@ class TestRunner {
         console(print: "mtu \(mtuWithResponse) bytes with response")
     }
 
-    fileprivate func sendData(toDeviceWithId deviceId: UUID, serviceId: CBUUID, characteristicId: CBUUID) async throws {
-        for i in 0..<100 {
+    fileprivate func sendData(toDeviceWithId deviceId: UUID, serviceId: CBUUID, characteristicId: CBUUID,
+                              packetSize: Int, numberMessages: Int = 100) async throws {
+        for i in 0..<numberMessages {
+            guard var indexData = String(i).data(using: .utf8) else {
+                return
+            }
             let data = try await stopwatch.measure {
-                generateRandomBytes(count: mtu)
+                generateRandomBytes(count: packetSize - indexData.count)
             } onStop: { console(print: "\(i)th random bytes generation time \($0) ms") }
+            indexData.append(data)
 
             let _ = try await stopwatch.measure {
                 let _ = try await bluetoothRadio.writeWithResponse(toPeripheralWithId: deviceId,
                                                                    serviceId: serviceId,
                                                                    characteristicId: characteristicId,
-                                                                   data: data)
+                                                                   data: indexData)
             } onStop: { sendTimeInMs in
                 totalTimeSendingInMs += sendTimeInMs
                 totalBytesSent += data.count

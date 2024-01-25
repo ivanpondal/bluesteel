@@ -1,6 +1,7 @@
 package com.example.blescanner.advertiser
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattServer
@@ -18,6 +19,7 @@ import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
@@ -40,16 +42,22 @@ class BluetoothServer(
 
     private val gattServerCallback = object : BluetoothGattServerCallback() {
         override fun onConnectionStateChange(
-            device: android.bluetooth.BluetoothDevice?,
-            status: Int,
-            newState: Int
+            device: android.bluetooth.BluetoothDevice?, status: Int, newState: Int
         ) {
             super.onConnectionStateChange(device, status, newState)
 
             Log.d(
-                TAG,
-                "onConnectionStateChange: Server $device status: $status state: $newState"
+                TAG, "onConnectionStateChange: Server $device status: $status state: $newState"
             )
+        }
+
+        override fun onExecuteWrite(device: BluetoothDevice?, requestId: Int, execute: Boolean) {
+            super.onExecuteWrite(device, requestId, execute)
+            Log.d(
+                TAG,
+                "Received an execute write with requuest id $requestId, ececute $execute form device $device"
+            )
+            gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, ByteArray(0))
         }
 
         @RequiresPermission("android.permission.BLUETOOTH_CONNECT")
@@ -63,32 +71,34 @@ class BluetoothServer(
             value: ByteArray?
         ) {
             super.onCharacteristicWriteRequest(
-                device,
-                requestId,
-                characteristic,
-                preparedWrite,
-                responseNeeded,
-                offset,
-                value
+                device, requestId, characteristic, preparedWrite, responseNeeded, offset, value
             )
 
-            gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
+            if (preparedWrite) {
+                Log.d(
+                    TAG,
+                    "Received a prepared write with offset $offset, response needed? $responseNeeded"
+                )
+            }
+
+            if (responseNeeded) {
+                gattServer.sendResponse(
+                    device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value
+                )
+            }
 
             if (device !== null && characteristic !== null && value !== null) {
                 writeHandlers[characteristic.uuid]?.let { writeHandler ->
-                    coroutineScope.launch {
+                    runBlocking {
                         writeHandler(
-                            device.address,
-                            offset,
-                            value
+                            device.address, offset, value
                         )
                     }
                 }
 
                 val message = String(value, StandardCharsets.UTF_8);
                 Log.d(
-                    TAG,
-                    "Received value with offset $offset $responseNeeded from $device: $message"
+                    TAG, "Received value with offset $offset $responseNeeded from $device: $message"
                 )
             }
         }
@@ -119,11 +129,12 @@ class BluetoothServer(
         override fun onStartFailure(errorCode: Int) {
             super.onStartFailure(errorCode)
             when (errorCode) {
-                ADVERTISE_FAILED_ALREADY_STARTED ->
-                    Log.e(TAG, "Advertising failed with error:  ADVERTISE_FAILED_ALREADY_STARTED")
+                ADVERTISE_FAILED_ALREADY_STARTED -> Log.e(
+                    TAG,
+                    "Advertising failed with error:  ADVERTISE_FAILED_ALREADY_STARTED"
+                )
 
-                else ->
-                    Log.e(TAG, "Advertising failed with error:  $errorCode")
+                else -> Log.e(TAG, "Advertising failed with error:  $errorCode")
             }
         }
     }
@@ -163,9 +174,7 @@ class BluetoothServer(
         advertiser.startAdvertising(
             AdvertiseSettings.Builder().setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
                 .build(),
-            AdvertiseData.Builder()
-                .addServiceUuid(ParcelUuid(gattService.serviceUUID))
-                .build(),
+            AdvertiseData.Builder().addServiceUuid(ParcelUuid(gattService.serviceUUID)).build(),
             advertisementCallback
         )
 

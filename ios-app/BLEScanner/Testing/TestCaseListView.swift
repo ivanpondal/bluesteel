@@ -15,6 +15,7 @@ struct TestCaseListView: View {
     @State private var selectedTestCase: TestCaseId = TestCaseId.SR_OW_1
 
     @State private var selectedRole: TestCaseRole = .A
+    @State private var selectedNodeIndex: Int8 = 0
 
     func NavigationViewWrapper(@ViewBuilder content: () -> some View) -> some View {
         if #available(iOS 16, *) {
@@ -37,46 +38,34 @@ struct TestCaseListView: View {
                         .toggleStyle(.switch)
                     }
                 case .SR_OW_2:
-                    HStack(){
-                        Text("Role")
-                        Divider()
-                        Picker("", selection: $selectedRole){
-                            Text("Sender").tag(TestCaseRole.A)
-                            Text("Receiver").tag(TestCaseRole.B)
-                        }.pickerStyle(.menu)
-                    }.fixedSize().padding(.top, 24)
+                    DropdownPicker(selection: $selectedRole, pickerLabel: "Role",
+                                   options: [(TestCaseRole.A, "Sender"), (TestCaseRole.B, "Receiver")])
+                    .padding(.top, 24)
                 case .SR_OW_3:
-                    HStack(){
-                        Text("Role")
-                        Divider()
-                        Picker("", selection: $selectedRole){
-                            Text("Sender").tag(TestCaseRole.A)
-                            Text("Receiver").tag(TestCaseRole.B)
-                        }.pickerStyle(.menu)
-                    }.fixedSize().padding(.top, 24)
+                    DropdownPicker(selection: $selectedRole, pickerLabel: "Role",
+                                   options: [(TestCaseRole.A, "Sender"), (TestCaseRole.B, "Receiver")])
+                    .padding(.top, 24)
                 case .SR_OW_4:
-                    HStack(){
-                        Text("Role")
-                        Divider()
-                        Picker("", selection: $selectedRole){
-                            Text("Foreground").tag(TestCaseRole.A)
-                            Text("Background").tag(TestCaseRole.B)
-                        }.pickerStyle(.menu)
-                    }.fixedSize().padding(.top, 24)
+                    DropdownPicker(selection: $selectedRole, pickerLabel: "Role",
+                                   options: [(TestCaseRole.A, "Foreground"), (TestCaseRole.B, "Background")])
+                    .padding(.top, 24)
+                case .SR_OW_5:
+                    DropdownPicker(selection: $selectedRole, pickerLabel: "Role",
+                                   options: [(TestCaseRole.A, "Sender"), (TestCaseRole.B, "Relay"), (TestCaseRole.C, "Receiver")])
+                    .padding(.top, 24)
+                    if (selectedRole != TestCaseRole.A) {
+                        DropdownPicker(selection: $selectedNodeIndex, pickerLabel: "Node Index",
+                                       options: Array(0...4).map({ ($0, "\($0)") }))
+                        .padding(.top, 24)
+                    }
                 }
                 Spacer()
-                HStack{
-                    Text("Test case")
-                    Divider()
-                    Picker("", selection: $selectedTestCase){
-                        ForEach(TestCaseId.allCases, id: \.self) {
-                            Text($0.displayName()).tag($0)
-                        }
-                    }.pickerStyle(.menu)
-                }.fixedSize()
+                DropdownPicker(selection: $selectedTestCase, pickerLabel: "Test case",
+                               options: TestCaseId.allCases.map { ($0, $0.displayName())})
                 NavigationLink(destination: TestCaseView(activeTestCase: TestCase(
                     id: selectedTestCase,
-                    role: selectedRole), bluetoothRadio: bluetoothRadio, targetDevice: connectedDevices.filter({selectedDevices[$0.id] == true}).first
+                    role: selectedRole,
+                    nodeIndex: selectedNodeIndex), bluetoothRadio: bluetoothRadio, targetDevice: connectedDevices.filter({selectedDevices[$0.id] == true}).first
                 )) {
                     Button("Run", action: {}).allowsHitTesting(false)
                 }
